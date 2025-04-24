@@ -1,0 +1,44 @@
+package main
+
+import (
+	"context"
+	"log"
+	"net/http"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/go-chi/chi/v5"
+
+	"mdai-audit-api/internal"
+)
+
+var (
+	s3Client    *s3.Client
+	awsRegion   = "us-east-1"
+	awsEndpoint = "http://localhost:9000"
+)
+
+func main() {
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithSharedConfigProfile("local-minio"),
+		config.WithRegion(awsRegion),
+		config.WithClientLogMode(aws.LogRetries),
+	)
+	if err != nil {
+		log.Fatal("unable to load SDK config, ", err)
+	}
+
+	s3Client = s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(awsEndpoint)
+		o.UsePathStyle = true
+	})
+
+	r := chi.NewRouter()
+	r.Get("/logs/{timestamp}", func(w http.ResponseWriter, r *http.Request) {
+		internal.ListObjectsHandler(w, r, s3Client)
+	})
+
+	log.Println("Listening on :3000")
+	log.Fatal(http.ListenAndServe(":3000", r))
+}
