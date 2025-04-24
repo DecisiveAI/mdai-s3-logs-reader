@@ -1,4 +1,4 @@
-module mdai-audit-api
+module github.com/decisiveai/mdai-s3-logs-reader
 
 go 1.23
 
