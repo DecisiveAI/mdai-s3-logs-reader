@@ -19,7 +19,6 @@ var (
 
 func main() {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithSharedConfigProfile("local-minio"),
 		config.WithClientLogMode(aws.LogRetries),
 	)
 	if err != nil {
