@@ -13,16 +13,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-chi/chi/v5"
+
+	internalTypes "github.com/decisiveai/mdai-s3-logs-reader/types"
 )
 
 var (
 	bucket = "mdai-collector-logs"
 )
-
-type ListedObject struct {
-	Key          string    `json:"key"`
-	LastModified time.Time `json:"last_modified"`
-}
 
 func ListObjectsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client) {
 	timestamp := chi.URLParam(r, "timestamp")
@@ -53,7 +50,7 @@ func ListObjectsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Cli
 	}
 }
 
-func listObjects(ctx context.Context, client *s3.Client, bucket string, prefix string) ([]ListedObject, error) {
+func listObjects(ctx context.Context, client *s3.Client, bucket string, prefix string) ([]internalTypes.ListedObject, error) {
 	var err error
 	var output *s3.ListObjectsV2Output
 	input := &s3.ListObjectsV2Input{
@@ -76,10 +73,10 @@ func listObjects(ctx context.Context, client *s3.Client, bucket string, prefix s
 		}
 	}
 
-	var listed []ListedObject
+	var listed []internalTypes.ListedObject
 	for _, obj := range objects {
 		if obj.Key != nil && obj.LastModified != nil {
-			listed = append(listed, ListedObject{
+			listed = append(listed, internalTypes.ListedObject{
 				Key:          *obj.Key,
 				LastModified: *obj.LastModified,
 			})
@@ -89,7 +86,7 @@ func listObjects(ctx context.Context, client *s3.Client, bucket string, prefix s
 	return listed, err
 }
 
-func getObject(ctx context.Context, client *s3.Client, bucketName string, listed []ListedObject) ([]byte, error) {
+func getObject(ctx context.Context, client *s3.Client, bucketName string, listed []internalTypes.ListedObject) ([]byte, error) {
 	if len(listed) == 0 {
 		return nil, fmt.Errorf("no logs found for the given timestamp")
 	}

@@ -14,15 +14,12 @@ import (
 )
 
 var (
-	s3Client    *s3.Client
-	awsRegion   = "us-east-1"
-	awsEndpoint = "http://localhost:9000"
+	s3Client *s3.Client
 )
 
 func main() {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithSharedConfigProfile("local-minio"),
-		config.WithRegion(awsRegion),
 		config.WithClientLogMode(aws.LogRetries),
 	)
 	if err != nil {
@@ -30,7 +27,6 @@ func main() {
 	}
 
 	s3Client = s3.NewFromConfig(cfg, func(o *s3.Options) {
-		o.BaseEndpoint = aws.String(awsEndpoint)
 		o.UsePathStyle = true
 	})
 
