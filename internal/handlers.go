@@ -2,14 +2,16 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-chi/chi/v5"
@@ -17,11 +19,10 @@ import (
 	internalTypes "github.com/decisiveai/mdai-s3-logs-reader/types"
 )
 
-var (
-	bucket = "mdai-collector-logs"
-)
+// https://docs.aws.amazon.com/sdk-for-go/v2/developer-guide/sdk-utilities-s3.html
 
-func ListObjectsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client) {
+// TODO: Create an easier way to configure how logs are grabbed, like what severity levels to include
+func ListObjectsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client, s3Bucket string) {
 	timestamp := chi.URLParam(r, "timestamp")
 
 	parsedTime, err := time.Parse("2006-01-02T15", timestamp)
@@ -31,22 +32,44 @@ func ListObjectsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Cli
 	}
 	prefix := fmt.Sprintf("log/%04d/%02d/%02d/%02d/", parsedTime.Year(), parsedTime.Month(), parsedTime.Day(), parsedTime.Hour())
 
-	listed, err := listObjects(r.Context(), s3Client, bucket, prefix)
+	var returnedLogs []internalTypes.LogRecord
+
+	listed, err := listObjects(r.Context(), s3Client, s3Bucket, prefix)
 	if err != nil {
 		http.Error(w, "Error listing objects", http.StatusInternalServerError)
 		return
 	}
 
-	mostRecentLogs, err := getObject(r.Context(), s3Client, bucket, listed)
-	if err != nil {
-		http.Error(w, "Error listing objects", http.StatusInternalServerError)
-		return
+	for _, obj := range listed {
+		data, err := retrieveObject(r.Context(), s3Client, s3Bucket, obj.Key)
+		if err != nil {
+			log.Printf("Error downloading %s: %v", obj.Key, err)
+			continue
+		}
+
+		logs, err := parseLogRecords(data)
+		if err != nil {
+			log.Printf("Error parsing logs from %s: %v", obj.Key, err)
+			continue
+		}
+
+		returnedLogs = append(returnedLogs, logs...)
 	}
+
+	var filteredLogs []internalTypes.LogRecord
+	for _, logEntry := range returnedLogs {
+		if logEntry.Severity != "Normal" {
+			filteredLogs = append(filteredLogs, logEntry)
+		}
+	}
+
+	// paginate based on URL query params
+	paginatedLogs := paginateLogs(filteredLogs, r)
 
 	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(mostRecentLogs)
+	err = json.NewEncoder(w).Encode(paginatedLogs)
 	if err != nil {
-		return
+		log.Printf("failed to encode JSON: %v", err)
 	}
 }
 
@@ -86,30 +109,126 @@ func listObjects(ctx context.Context, client *s3.Client, bucket string, prefix s
 	return listed, err
 }
 
-func getObject(ctx context.Context, client *s3.Client, bucketName string, listed []internalTypes.ListedObject) ([]byte, error) {
-	if len(listed) == 0 {
-		return nil, fmt.Errorf("no logs found for the given timestamp")
-	}
-	objKey := listed[0].Key
+func retrieveObject(ctx context.Context, client *s3.Client, bucket string, key string) ([]byte, error) {
+	buf := manager.NewWriteAtBuffer([]byte{})
+	downloader := manager.NewDownloader(client)
 
-	result, err := client.GetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(objKey),
+	_, err := downloader.Download(ctx, buf, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
 	})
 	if err != nil {
-		var noKey *types.NoSuchKey
-		if errors.As(err, &noKey) {
-			log.Printf("Can't get object %s from bucket %s. No such key exists.\n", objKey, bucketName)
-			err = noKey
-		} else {
-			log.Printf("Couldn't get object %v:%v. Here's why: %v\n", bucketName, objKey, err)
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// paginates the logs based on the limit and offset query parameters (ex. ?limit=100&offset=200)
+func paginateLogs(logs []internalTypes.LogRecord, r *http.Request) []internalTypes.LogRecord {
+	limit := 100
+	offset := 0
+
+	query := r.URL.Query()
+
+	if l := query.Get("limit"); l != "" {
+		if val, err := strconv.Atoi(l); err == nil {
+			limit = val
+		}
+	}
+	if o := query.Get("offset"); o != "" {
+		if val, err := strconv.Atoi(o); err == nil {
+			offset = val
 		}
 	}
 
-	body, err := io.ReadAll(result.Body)
-	if err != nil {
-		log.Printf("Couldn't read object body from %v. Here's why: %v\n", objKey, err)
+	start := offset
+	end := offset + limit
+	if start > len(logs) {
+		start = len(logs)
+	}
+	if end > len(logs) {
+		end = len(logs)
 	}
 
-	return body, err
+	return logs[start:end]
+}
+
+// TODO: Find a better way to handle this & add other types OTEL & audit logs
+func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
+	var raw map[string]interface{}
+	err := json.Unmarshal(data, &raw)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceLogs, ok := raw["resourceLogs"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid format: missing resourceLogs")
+	}
+
+	var records []internalTypes.LogRecord
+
+	for _, res := range resourceLogs {
+		resMap := res.(map[string]interface{})
+		resourceAttrs := extractAttributes(resMap["resource"])
+
+		kind := resourceAttrs["k8s.object.kind"]
+		objectName := resourceAttrs["k8s.object.name"]
+
+		scopeLogs := resMap["scopeLogs"].([]interface{})
+		for _, scope := range scopeLogs {
+			scopeMap := scope.(map[string]interface{})
+			logRecords := scopeMap["logRecords"].([]interface{})
+
+			for _, rec := range logRecords {
+				recMap := rec.(map[string]interface{})
+				attrs := extractAttributes(recMap)
+
+				records = append(records, internalTypes.LogRecord{
+					Timestamp:  safeString(recMap["timeUnixNano"]),
+					Severity:   safeString(recMap["severityText"]),
+					Body:       safeString(recMap["body"].(map[string]interface{})["stringValue"]),
+					Reason:     attrs["k8s.event.reason"],
+					EventName:  attrs["k8s.event.name"],
+					Kind:       kind,
+					ObjectName: objectName,
+				})
+			}
+		}
+	}
+
+	return records, nil
+}
+
+func extractAttributes(obj interface{}) map[string]string {
+	result := make(map[string]string)
+	if obj == nil {
+		return result
+	}
+	objMap := obj.(map[string]interface{})
+	attrs, ok := objMap["attributes"].([]interface{})
+	if !ok {
+		return result
+	}
+	for _, attr := range attrs {
+		attrMap := attr.(map[string]interface{})
+		key := safeString(attrMap["key"])
+		valMap := attrMap["value"].(map[string]interface{})
+		val := safeString(valMap["stringValue"])
+		if key != "" {
+			result[key] = val
+		}
+	}
+	return result
+}
+
+func safeString(val interface{}) string {
+	if val == nil {
+		return ""
+	}
+	if str, ok := val.(string); ok {
+		return str
+	}
+	return ""
 }
