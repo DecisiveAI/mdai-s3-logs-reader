@@ -8,11 +8,10 @@ type ListedObject struct {
 }
 
 type LogRecord struct {
-	Timestamp  string `json:"timestamp"`
-	Severity   string `json:"severity"`
-	Body       string `json:"body"`
-	Reason     string `json:"reason"`
-	EventName  string `json:"eventName"`
-	Kind       string `json:"kind"`
-	ObjectName string `json:"objectName"`
+	Timestamp string `json:"timestamp"`
+	Severity  string `json:"severity"`
+	Body      string `json:"body"`
+	Reason    string `json:"reason"`
+	EventName string `json:"eventName"`
+	Pod       string `json:"pod"`
 }

@@ -7,16 +7,17 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
 ## Prerequisites
 
 - Go 1.20+
-- [AWS CLI V2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - Existing Cluster (Recommended: [mdai](https://docs.mydecisive.ai/))
-- [mdai-collector](https://github.com/DecisiveAI/watcher-collector/tree/rlaw/debug-collector) deployed on your cluster
+- [mdai-collector](https://github.com/DecisiveAI/watcher-collector) deployed on your cluster
     - Clone the repository
-    - `make docker-build-mdai-collector`
-    - `kind load docker-image mdai-collector:0.1.4 --name mdai`
-    - `kubectl apply -f ./deployment/mdai-collector`
+    - ```bash
+      make docker-build-mdai-collector
+      kind load docker-image mdai-collector:0.1.4 --name mdai
+      kubectl apply -f ./deployment/mdai-collector
+      ```
 *(Note: steps above are temporary and will change once the mdai-collector is active in helm. There may also be changes that have to be made for the deployment to work in the collector)*
-- [MinIO](https://min.io/) **or** S3-compatible storage set up for mdai-collector
-    - Deploy MinIO server into local cluster using the [Minio walkthrough](/simulation/simulation.md)
+- S3-compatible storage set up for mdai-collector **or** [MinIO](https://min.io/)
+    - Deploy MinIO server into local cluster using the [Minio walkthrough](/simulation/README)
     - [S3 setup](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html)
 - Log files must be valid JSON
 

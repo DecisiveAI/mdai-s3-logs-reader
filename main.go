@@ -14,13 +14,11 @@ import (
 )
 
 var (
-	awsSsoProfile = "admin"
-	s3Bucket      = "mdai-collector-logs"
+	s3Bucket = "mdai-collector-logs"
 )
 
 func main() {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithSharedConfigProfile(awsSsoProfile),
 		config.WithClientLogMode(aws.LogRetries),
 	)
 	if err != nil {
@@ -34,6 +32,6 @@ func main() {
 		internal.ListObjectsHandler(w, r, s3Client, s3Bucket)
 	})
 
-	log.Println("Listening on :3000")
-	log.Fatal(http.ListenAndServe(":3000", r))
+	log.Println("Listening on :4400")
+	log.Fatal(http.ListenAndServe(":4400", r)) //Grafana uses port 3000, so making port 4400
 }

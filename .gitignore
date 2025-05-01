@@ -22,3 +22,5 @@ go.work.sum
 template
 build
 .secrets
+
+secret.yaml

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: mdai
+  name: mdai-s3-logs-reader
+  labels:
+    app: mdai-s3-logs-reader
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mdai-s3-logs-reader
+
+  template:
+    metadata:
+      labels:
+        app: mdai-s3-logs-reader
+        app.kubernetes.io/component: mdai-s3-logs-reader
+    spec:
+      serviceAccountName: mdai-s3-logs-reader
+      containers:
+        - name: mdai-s3-logs-reader
+          image: mdai-s3-logs-reader:0.0.1
+          env:
+            - name: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+          ports:
+            - containerPort: 4400
+              name: http

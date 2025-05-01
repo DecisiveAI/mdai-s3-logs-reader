@@ -22,6 +22,11 @@ import (
 // https://docs.aws.amazon.com/sdk-for-go/v2/developer-guide/sdk-utilities-s3.html
 
 // TODO: Create an easier way to configure how logs are grabbed, like what severity levels to include
+
+var (
+	normalSeverity = "Normal"
+)
+
 func ListObjectsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client, s3Bucket string) {
 	timestamp := chi.URLParam(r, "timestamp")
 
@@ -32,16 +37,38 @@ func ListObjectsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Cli
 	}
 	prefix := fmt.Sprintf("log/%04d/%02d/%02d/%02d/", parsedTime.Year(), parsedTime.Month(), parsedTime.Day(), parsedTime.Hour())
 
-	var returnedLogs []internalTypes.LogRecord
-
-	listed, err := listObjects(r.Context(), s3Client, s3Bucket, prefix)
+	returnedLogs, err := LoadLogsFromS3(r.Context(), s3Client, s3Bucket, prefix)
 	if err != nil {
-		http.Error(w, "Error listing objects", http.StatusInternalServerError)
 		return
 	}
 
+	var filteredLogs []internalTypes.LogRecord
+	for _, logEntry := range returnedLogs {
+		if logEntry.Severity != normalSeverity {
+			filteredLogs = append(filteredLogs, logEntry)
+		}
+	}
+
+	// paginate based on URL query params
+	paginatedLogs := paginateLogs(filteredLogs, r)
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(paginatedLogs)
+	if err != nil {
+		log.Printf("failed to encode JSON: %v", err)
+	}
+}
+
+func LoadLogsFromS3(ctx context.Context, client *s3.Client, bucket string, prefix string) ([]internalTypes.LogRecord, error) {
+	var returnedLogs []internalTypes.LogRecord
+
+	listed, err := listObjects(ctx, client, bucket, prefix)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, obj := range listed {
-		data, err := retrieveObject(r.Context(), s3Client, s3Bucket, obj.Key)
+		data, err := retrieveObject(ctx, client, bucket, obj.Key)
 		if err != nil {
 			log.Printf("Error downloading %s: %v", obj.Key, err)
 			continue
@@ -56,21 +83,7 @@ func ListObjectsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Cli
 		returnedLogs = append(returnedLogs, logs...)
 	}
 
-	var filteredLogs []internalTypes.LogRecord
-	for _, logEntry := range returnedLogs {
-		if logEntry.Severity != "Normal" {
-			filteredLogs = append(filteredLogs, logEntry)
-		}
-	}
-
-	// paginate based on URL query params
-	paginatedLogs := paginateLogs(filteredLogs, r)
-
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(paginatedLogs)
-	if err != nil {
-		log.Printf("failed to encode JSON: %v", err)
-	}
+	return returnedLogs, nil
 }
 
 func listObjects(ctx context.Context, client *s3.Client, bucket string, prefix string) ([]internalTypes.ListedObject, error) {
@@ -173,7 +186,6 @@ func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 		resMap := res.(map[string]interface{})
 		resourceAttrs := extractAttributes(resMap["resource"])
 
-		kind := resourceAttrs["k8s.object.kind"]
 		objectName := resourceAttrs["k8s.object.name"]
 
 		scopeLogs := resMap["scopeLogs"].([]interface{})
@@ -186,13 +198,12 @@ func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 				attrs := extractAttributes(recMap)
 
 				records = append(records, internalTypes.LogRecord{
-					Timestamp:  safeString(recMap["timeUnixNano"]),
-					Severity:   safeString(recMap["severityText"]),
-					Body:       safeString(recMap["body"].(map[string]interface{})["stringValue"]),
-					Reason:     attrs["k8s.event.reason"],
-					EventName:  attrs["k8s.event.name"],
-					Kind:       kind,
-					ObjectName: objectName,
+					Timestamp: safeString(recMap["timeUnixNano"]),
+					Severity:  safeString(recMap["severityText"]),
+					Body:      safeString(recMap["body"].(map[string]interface{})["stringValue"]),
+					Reason:    attrs["k8s.event.reason"],
+					EventName: attrs["k8s.event.name"],
+					Pod:       objectName,
 				})
 			}
 		}
