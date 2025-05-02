@@ -10,14 +10,7 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
 
 - Go 1.20+
 - Existing Cluster (Recommended: [mdai](https://docs.mydecisive.ai/))
-- [mdai-collector](https://github.com/DecisiveAI/watcher-collector) deployed on your cluster
-    - Clone the repository
-    - ```bash
-      make docker-build-mdai-collector
-      kind load docker-image mdai-collector:0.1.4 --name mdai
-      kubectl apply -f ./deployment/mdai-collector
-      ```
-*(Note: steps above are temporary and will change once the mdai-collector is active in helm. There may also be changes that have to be made for the deployment to work in the collector)*
+- mdai-collector - TBD adding explanation for this
 - S3-compatible storage set up for mdai-collector **or** [MinIO](https://min.io/)
     - Deploy MinIO server into local cluster using the [Minio walkthrough](/simulation/README)
     - [S3 setup](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html)
@@ -28,13 +21,8 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
 - ```ssh 
   go mod vendor
   ```
-- [Set up AWS credentials via CLI using SSO](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html#cli-configure-sso-session) for S3 set up for mdai-collector OR use existing credentials
-  - Be sure output format is `json`
-- Login to AWS SSO
-  - ```ssh 
-    aws sso login --profile <your-profile-name>
-    ```
-- Replace 'awsSsoProfile' in `main.go` with your profile name
+
+### TBD on AWS config step; moved to kube secret for this (was initially SSO via AWS CLI)
 
 ### Run it!
 - `go run main.go`

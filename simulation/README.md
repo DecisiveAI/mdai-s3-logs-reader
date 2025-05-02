@@ -4,6 +4,8 @@ Test using a local MinIO server and MDAI cluster. This API retrieves and transfo
 
 ---
 
+[//]: # (Need to add Kube secret stuffs for minio config step; moved to kube secret for this, was initially SSO via AWS CLI)
+
 ## Prerequisites
 - [MDAI Cluster](https://docs.mydecisive.ai/))
 
