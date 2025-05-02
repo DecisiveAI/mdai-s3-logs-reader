@@ -54,7 +54,6 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 		filteredLogs = append(filteredLogs, logEntry)
 	}
 
-	// paginate based on URL query params
 	paginatedLogs := paginateLogs(filteredLogs, r)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -172,7 +171,7 @@ func paginateLogs(logs []internalTypes.LogRecord, r *http.Request) []internalTyp
 	return logs[start:end]
 }
 
-// TODO: Find a better way to handle this & add other types OTEL & audit logs
+// TODO: Find a better way to handle this
 func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 	var raw map[string]interface{}
 	err := json.Unmarshal(data, &raw)
