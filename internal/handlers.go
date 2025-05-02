@@ -21,8 +21,6 @@ import (
 
 // https://docs.aws.amazon.com/sdk-for-go/v2/developer-guide/sdk-utilities-s3.html
 
-// TODO: Create an easier way to configure how logs are grabbed, like what severity levels to include
-
 type S3API interface {
 	ListObjectsV2(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error)
 	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
