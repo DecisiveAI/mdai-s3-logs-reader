@@ -4,6 +4,8 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
 
 ---
 
+# THIS README IS A WIP! Under construction and will be updated as the project progresses.
+
 ## Prerequisites
 
 - Go 1.20+
@@ -36,6 +38,6 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
 
 ### Run it!
 - `go run main.go`
-- http://localhost:3000/logs/YYYY-MM-DDTHH (replace with date and time for your bucket)
-  - Example: http://localhost:3000/logs/2025-04-01T20
-  - Pagination is supported, by default limit is 100 logs (ex. http://localhost:3000/logs/2025-04-01T20?limit=100&offset=200)
+- http://localhost:3000/log/YYYY-MM-DDTHH (replace with date and time for your bucket) Note: UTC time is used
+  - Example: http://localhost:3000/log/2025-04-01T20
+  - Pagination is supported, by default limit is 100 logs (ex. http://localhost:3000/log/2025-04-01T20?limit=100&offset=200)

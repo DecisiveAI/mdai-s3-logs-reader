@@ -1,6 +1,8 @@
 package types
 
-import "time"
+import (
+	"time"
+)
 
 type ListedObject struct {
 	Key          string    `json:"key"`
@@ -8,10 +10,13 @@ type ListedObject struct {
 }
 
 type LogRecord struct {
-	Timestamp string `json:"timestamp"`
-	Severity  string `json:"severity"`
-	Body      string `json:"body"`
-	Reason    string `json:"reason"`
-	EventName string `json:"eventName"`
-	Pod       string `json:"pod"`
+	Timestamp         string `json:"timestamp,omitempty"`
+	ObservedTimestamp string `json:"observedTimestamp,omitempty"`
+	Severity          string `json:"severity,omitempty"`
+	SeverityNumber    string `json:"severityNumber,omitempty"`
+	Body              string `json:"body,omitempty"`
+	Reason            string `json:"reason,omitempty"`
+	EventName         string `json:"eventName,omitempty"`
+	Pod               string `json:"pod,omitempty"`
+	ServiceName       string `json:"serviceName,omitempty"`
 }

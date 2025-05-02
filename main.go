@@ -28,10 +28,9 @@ func main() {
 	s3Client := s3.NewFromConfig(cfg)
 
 	r := chi.NewRouter()
-	r.Get("/logs/{timestamp}", func(w http.ResponseWriter, r *http.Request) {
-		internal.ListObjectsHandler(w, r, s3Client, s3Bucket)
+	r.Get("/logs/{auditPath}/{timestamp}", func(w http.ResponseWriter, r *http.Request) {
+		internal.ListLogsHandler(w, r, s3Client, s3Bucket)
 	})
-
 	log.Println("Listening on :4400")
 	log.Fatal(http.ListenAndServe(":4400", r)) //Grafana uses port 3000, so making port 4400
 }

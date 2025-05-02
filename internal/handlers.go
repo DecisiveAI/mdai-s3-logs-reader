@@ -23,19 +23,26 @@ import (
 
 // TODO: Create an easier way to configure how logs are grabbed, like what severity levels to include
 
-var (
-	normalSeverity = "Normal"
-)
+type S3API interface {
+	ListObjectsV2(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error)
+	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
+}
 
-func ListObjectsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client, s3Bucket string) {
+func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client, s3Bucket string) {
+	auditPath := chi.URLParam(r, "auditPath")
 	timestamp := chi.URLParam(r, "timestamp")
+
+	if auditPath == "" {
+		http.Error(w, "Invalid audit path: must be provided", http.StatusBadRequest)
+		return
+	}
 
 	parsedTime, err := time.Parse("2006-01-02T15", timestamp)
 	if err != nil {
 		http.Error(w, "Invalid timestamp format. Use YYYY-MM-DDTHH", http.StatusBadRequest)
 		return
 	}
-	prefix := fmt.Sprintf("log/%04d/%02d/%02d/%02d/", parsedTime.Year(), parsedTime.Month(), parsedTime.Day(), parsedTime.Hour())
+	prefix := fmt.Sprintf("%s/%04d/%02d/%02d/%02d/", auditPath, parsedTime.Year(), parsedTime.Month(), parsedTime.Day(), parsedTime.Hour())
 
 	returnedLogs, err := LoadLogsFromS3(r.Context(), s3Client, s3Bucket, prefix)
 	if err != nil {
@@ -44,9 +51,7 @@ func ListObjectsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Cli
 
 	var filteredLogs []internalTypes.LogRecord
 	for _, logEntry := range returnedLogs {
-		if logEntry.Severity != normalSeverity {
-			filteredLogs = append(filteredLogs, logEntry)
-		}
+		filteredLogs = append(filteredLogs, logEntry)
 	}
 
 	// paginate based on URL query params
@@ -59,7 +64,7 @@ func ListObjectsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Cli
 	}
 }
 
-func LoadLogsFromS3(ctx context.Context, client *s3.Client, bucket string, prefix string) ([]internalTypes.LogRecord, error) {
+func LoadLogsFromS3(ctx context.Context, client S3API, bucket string, prefix string) ([]internalTypes.LogRecord, error) {
 	var returnedLogs []internalTypes.LogRecord
 
 	listed, err := listObjects(ctx, client, bucket, prefix)
@@ -86,7 +91,7 @@ func LoadLogsFromS3(ctx context.Context, client *s3.Client, bucket string, prefi
 	return returnedLogs, nil
 }
 
-func listObjects(ctx context.Context, client *s3.Client, bucket string, prefix string) ([]internalTypes.ListedObject, error) {
+func listObjects(ctx context.Context, client S3API, bucket string, prefix string) ([]internalTypes.ListedObject, error) {
 	var err error
 	var output *s3.ListObjectsV2Output
 	input := &s3.ListObjectsV2Input{
@@ -122,7 +127,7 @@ func listObjects(ctx context.Context, client *s3.Client, bucket string, prefix s
 	return listed, err
 }
 
-func retrieveObject(ctx context.Context, client *s3.Client, bucket string, key string) ([]byte, error) {
+func retrieveObject(ctx context.Context, client S3API, bucket string, key string) ([]byte, error) {
 	buf := manager.NewWriteAtBuffer([]byte{})
 	downloader := manager.NewDownloader(client)
 
@@ -198,12 +203,15 @@ func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 				attrs := extractAttributes(recMap)
 
 				records = append(records, internalTypes.LogRecord{
-					Timestamp: safeString(recMap["timeUnixNano"]),
-					Severity:  safeString(recMap["severityText"]),
-					Body:      safeString(recMap["body"].(map[string]interface{})["stringValue"]),
-					Reason:    attrs["k8s.event.reason"],
-					EventName: attrs["k8s.event.name"],
-					Pod:       objectName,
+					Timestamp:         safeString(recMap["timeUnixNano"]),
+					ObservedTimestamp: safeString(recMap["observedTimeUnixNano"]),
+					Severity:          safeString(recMap["severityText"]),
+					SeverityNumber:    safeString(recMap["severityNumber"]),
+					Body:              safeString(recMap["body"].(map[string]interface{})["stringValue"]),
+					Reason:            attrs["k8s.event.reason"],
+					EventName:         attrs["k8s.event.name"],
+					Pod:               objectName,
+					ServiceName:       resourceAttrs["service.name"],
 				})
 			}
 		}
@@ -238,8 +246,14 @@ func safeString(val interface{}) string {
 	if val == nil {
 		return ""
 	}
-	if str, ok := val.(string); ok {
-		return str
+	switch v := val.(type) {
+	case string:
+		return v
+	case float64:
+		return fmt.Sprintf("%.0f", v)
+	case int:
+		return fmt.Sprintf("%d", v)
+	default:
+		return fmt.Sprintf("%v", v)
 	}
-	return ""
 }

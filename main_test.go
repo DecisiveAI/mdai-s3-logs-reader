@@ -15,10 +15,7 @@ import (
 	"github.com/decisiveai/mdai-s3-logs-reader/internal"
 )
 
-type S3API interface {
-	ListObjectsV2(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error)
-	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
-}
+// TODO: Make tests work, these are not working currently and are WIP
 
 type mockS3Client struct {
 	FakeListOutput *s3.ListObjectsV2Output
@@ -46,7 +43,7 @@ func (m *mockS3Client) GetObject(ctx context.Context, input *s3.GetObjectInput, 
 }
 
 func TestListAndParseLogs(t *testing.T) {
-	fileData, err := os.ReadFile("testdata/otel-runtime-sample.json")
+	fileData, err := os.ReadFile("sample-data/otel-runtime-sample.json")
 	if err != nil {
 		t.Fatalf("failed to read sample file: %v", err)
 	}
@@ -54,11 +51,11 @@ func TestListAndParseLogs(t *testing.T) {
 	mock := &mockS3Client{
 		FakeListOutput: &s3.ListObjectsV2Output{
 			Contents: []types.Object{
-				{Key: aws.String("logs/2025/04/28/20/sample1.json")},
+				{Key: aws.String("logs/2025/04/28/20/ooda-event-handler-sample.json")},
 			},
 		},
 		FakeObjectMap: map[string][]byte{
-			"logs/2025/04/28/20/sample1.json": fileData,
+			"logs/2025/04/28/20/ooda-event-handler-sample.json": fileData,
 		},
 	}
 
