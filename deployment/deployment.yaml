@@ -21,9 +21,9 @@ spec:
       containers:
         - name: mdai-s3-logs-reader
           image: mdai-s3-logs-reader:0.0.1
-          env:
-            - name: AWS_ACCESS_KEY_ID
-            - name: AWS_SECRET_ACCESS_KEY
+          envFrom:
+            - secretRef:
+                name: aws-credentials
           ports:
             - containerPort: 4400
               name: http
