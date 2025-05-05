@@ -47,12 +47,7 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 		return
 	}
 
-	var filteredLogs []internalTypes.LogRecord
-	for _, logEntry := range returnedLogs {
-		filteredLogs = append(filteredLogs, logEntry)
-	}
-
-	paginatedLogs := paginateLogs(filteredLogs, r)
+	paginatedLogs := paginateLogs(returnedLogs, r)
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(paginatedLogs)
@@ -171,13 +166,13 @@ func paginateLogs(logs []internalTypes.LogRecord, r *http.Request) []internalTyp
 
 // TODO: Find a better way to handle this
 func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
-	var raw map[string]interface{}
+	var raw map[string]any
 	err := json.Unmarshal(data, &raw)
 	if err != nil {
 		return nil, err
 	}
 
-	resourceLogs, ok := raw["resourceLogs"].([]interface{})
+	resourceLogs, ok := raw["resourceLogs"].([]any)
 	if !ok {
 		return nil, fmt.Errorf("invalid format: missing resourceLogs")
 	}
@@ -185,18 +180,18 @@ func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 	var records []internalTypes.LogRecord
 
 	for _, res := range resourceLogs {
-		resMap := res.(map[string]interface{})
+		resMap := res.(map[string]any)
 		resourceAttrs := extractAttributes(resMap["resource"])
 
 		objectName := resourceAttrs["k8s.object.name"]
 
-		scopeLogs := resMap["scopeLogs"].([]interface{})
+		scopeLogs := resMap["scopeLogs"].([]any)
 		for _, scope := range scopeLogs {
-			scopeMap := scope.(map[string]interface{})
-			logRecords := scopeMap["logRecords"].([]interface{})
+			scopeMap := scope.(map[string]any)
+			logRecords := scopeMap["logRecords"].([]any)
 
 			for _, rec := range logRecords {
-				recMap := rec.(map[string]interface{})
+				recMap := rec.(map[string]any)
 				attrs := extractAttributes(recMap)
 
 				records = append(records, internalTypes.LogRecord{
@@ -204,7 +199,7 @@ func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 					ObservedTimestamp: safeString(recMap["observedTimeUnixNano"]),
 					Severity:          safeString(recMap["severityText"]),
 					SeverityNumber:    safeString(recMap["severityNumber"]),
-					Body:              safeString(recMap["body"].(map[string]interface{})["stringValue"]),
+					Body:              safeString(recMap["body"].(map[string]any)["stringValue"]),
 					Reason:            attrs["k8s.event.reason"],
 					EventName:         attrs["k8s.event.name"],
 					Pod:               objectName,
@@ -217,20 +212,20 @@ func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 	return records, nil
 }
 
-func extractAttributes(obj interface{}) map[string]string {
+func extractAttributes(obj any) map[string]string {
 	result := make(map[string]string)
 	if obj == nil {
 		return result
 	}
-	objMap := obj.(map[string]interface{})
-	attrs, ok := objMap["attributes"].([]interface{})
+	objMap := obj.(map[string]any)
+	attrs, ok := objMap["attributes"].([]any)
 	if !ok {
 		return result
 	}
 	for _, attr := range attrs {
-		attrMap := attr.(map[string]interface{})
+		attrMap := attr.(map[string]any)
 		key := safeString(attrMap["key"])
-		valMap := attrMap["value"].(map[string]interface{})
+		valMap := attrMap["value"].(map[string]any)
 		val := safeString(valMap["stringValue"])
 		if key != "" {
 			result[key] = val
@@ -239,7 +234,7 @@ func extractAttributes(obj interface{}) map[string]string {
 	return result
 }
 
-func safeString(val interface{}) string {
+func safeString(val any) string {
 	if val == nil {
 		return ""
 	}
