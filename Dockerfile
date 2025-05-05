@@ -4,7 +4,7 @@ ARG TARGETARCH
 WORKDIR /opt/mdai-s3-logs-reader
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -mod=vendor -ldflags="-w -s" -o /mdai-s3-logs-reader main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o /mdai-s3-logs-reader main.go
 
 FROM gcr.io/distroless/static-debian12
 WORKDIR /
