@@ -1,0 +1,729 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "mdai-logstream",
+            "value": {
+              "stringValue": "collector"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "5343f1ed-5b00-4142-8959-ff340efc7b2e"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "otelcol-contrib"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "0.118.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "go"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.33.0"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/collector/service/telemetry"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1746121239783508013",
+              "observedTimeUnixNano": "1746121239783625846",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "service::telemetry::metrics::address is being deprecated in favor of service::telemetry::metrics::readers"
+              },
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121239686626471",
+              "observedTimeUnixNano": "1746121239786399680",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121239686704888",
+              "observedTimeUnixNano": "1746121239786404888",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121239686708096",
+              "observedTimeUnixNano": "1746121239786406763",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121239686725346",
+              "observedTimeUnixNano": "1746121239786408180",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            }
+          ]
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.26.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "mdai-logstream",
+            "value": {
+              "stringValue": "collector"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "9dcbedc7-ad03-477f-bbba-b5b7438c5c81"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "otelcol-contrib"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "0.118.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "go"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.33.0"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/collector/service/telemetry"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1746121239765606888",
+              "observedTimeUnixNano": "1746121239765630596",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "service::telemetry::metrics::address is being deprecated in favor of service::telemetry::metrics::readers"
+              },
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121239749124430",
+              "observedTimeUnixNano": "1746121239848049596",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121239749182388",
+              "observedTimeUnixNano": "1746121239848115180",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121239749186221",
+              "observedTimeUnixNano": "1746121239848117513",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121239749394221",
+              "observedTimeUnixNano": "1746121239848119221",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            }
+          ]
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.26.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "mdai-logstream",
+            "value": {
+              "stringValue": "collector"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "5a336301-01b8-4674-9255-115813b3dc08"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "otelcol-contrib"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "0.118.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "go"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.33.0"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/collector/service/telemetry"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1746121240163973680",
+              "observedTimeUnixNano": "1746121240164001305",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "service::telemetry::metrics::address is being deprecated in favor of service::telemetry::metrics::readers"
+              },
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121240056467347",
+              "observedTimeUnixNano": "1746121240176067597",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121240056574138",
+              "observedTimeUnixNano": "1746121240176408888",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121240056587513",
+              "observedTimeUnixNano": "1746121240176434597",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121240056594805",
+              "observedTimeUnixNano": "1746121240177209388",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            }
+          ]
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.26.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "mdai-logstream",
+            "value": {
+              "stringValue": "collector"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "de81a867-5964-403a-841d-0d809dcd7875"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "otelcol-contrib"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "0.118.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "go"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.33.0"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/collector/service/telemetry"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1746121241141515347",
+              "observedTimeUnixNano": "1746121241141534389",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "service::telemetry::metrics::address is being deprecated in favor of service::telemetry::metrics::readers"
+              },
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121240952722430",
+              "observedTimeUnixNano": "1746121241221931305",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121240953020430",
+              "observedTimeUnixNano": "1746121241221963430",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121240953109972",
+              "observedTimeUnixNano": "1746121241221965889",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121240953118305",
+              "observedTimeUnixNano": "1746121241221968847",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            }
+          ]
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.26.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "mdai-logstream",
+            "value": {
+              "stringValue": "collector"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "73b0c81a-99ee-4dc3-b0f9-5bee0feaaf6e"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "otelcol-contrib"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "0.118.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "go"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.33.0"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/collector/service/telemetry"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1746121242838711459",
+              "observedTimeUnixNano": "1746121242838742250",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "service::telemetry::metrics::address is being deprecated in favor of service::telemetry::metrics::readers"
+              },
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121242675148917",
+              "observedTimeUnixNano": "1746121242938879167",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121242675352000",
+              "observedTimeUnixNano": "1746121242938962209",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121242675429208",
+              "observedTimeUnixNano": "1746121242938977000",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            },
+            {
+              "timeUnixNano": "1746121242675443583",
+              "observedTimeUnixNano": "1746121242938986542",
+              "severityNumber": 13,
+              "severityText": "warn",
+              "body": {
+                "stringValue": "Configuration references unset environment variable"
+              },
+              "attributes": [
+                {
+                  "key": "name",
+                  "value": {
+                    "stringValue": "MY_POD_IP"
+                  }
+                }
+              ],
+              "traceId": "",
+              "spanId": ""
+            }
+          ]
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.26.0"
+    }
+  ]
+}

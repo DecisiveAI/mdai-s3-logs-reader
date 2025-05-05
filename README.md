@@ -1,44 +1,57 @@
 # mdai-s3-logs-reader
 
-A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log files from S3-compatible storage (e.g. MinIO). Returns most recent JSON file for a given hourly timestamp.
+A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log files from S3-compatible storage. Returns most recent JSON file for a given hourly timestamp.
 
 ---
+
+# THIS README IS A WIP! Under construction and will be updated as the project progresses.
 
 ## Prerequisites
 
 - Go 1.20+
-- [mdai-collector](https://github.com/DecisiveAI/watcher-collector/tree/rlaw/debug-collector) deployed on your cluster
-    - Clone the repository
-    - `make docker-build-mdai-collector`
-    - `kind load docker-image mdai-collector:0.1.4 --name mdai`
-    - `kubectl apply -f ./deployment/mdai-collector`
-      
-*(Note: steps above are temporary and will change once the mdai-collector is active in helm. There may also be changes that have to be made for the deployment to work in the collector)*
-- MinIO  with log files stored in this format: log/YYYY/MM/DD/HH/hub-logs_{UID}.json
-
-[//]: # (TODO: or  S3 bucket)
-
-- Log files must be valid JSON in OpenTelemetry structure
+- Docker
+- [Kind](https://kind.sigs.k8s.io/)
+- Existing Cluster (Recommended: [mdai](https://docs.mydecisive.ai/))
+- mdai-collector - TBD adding explanation for this
+- S3-compatible storage set up for mdai-collector **or** [MinIO](https://min.io/)
+    - Deploy MinIO server into local cluster using the [Minio walkthrough](/simulation/README)
+    - [S3 setup](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html)
+- Log files must be valid JSON
 
 ## Getting Started
 - Clone the repository
-- `go mod vendor`
+  ```bash 
+  go mod vendor
+  ```
 
-### Configure AWS credentials for MinIO 
+### Set up API for pulling logs from S3-compatible storage
+- Create Docker image
+  ```bash
+  docker build -t mdai-s3-logs-reader:0.0.1 .
+  ```
+- Load Docker image into kind cluster
+  ```bash
+  kind load docker-image mdai-s3-logs-reader:0.0.1 --name mdai
+  ```
+- Create a secret.yaml using [template-secret.yaml](/template_secret.yaml)
+- Apply the secret.yaml to the cluster
+  ```bash
+  kubectl apply -f secret.yaml
+  ```
+- Apply service account, service, and deployment
+  ```bash
+  kubectl apply -f deployment/serviceAccount.yaml -f deployment/service.yaml -f deployment/deployment.yaml
+  ```
+- Check deployment status
+  ```bash
+  kubectl get pods -n mdai
+  ```
+- Port forward the service
+  ```bash
+  kubectl port-forward svc/mdai-s3-logs-reader-service 4400:4400 -n mdai
+    ```
 
-[//]: # (TODO: S3 set up)
-
-~/.aws/credentials
-```ini
-[local-minio]
-aws_access_key_id = admin
-aws_secret_access_key = admin123
-```
-~/.aws/config
-```ini
-[profile local-minio]
-region = us-east-1
-```
-### Run it!
-- `go run main.go`
-- http://localhost:3000/logs/2025-04-22T22 (replace with date and time for your bucket)
+### Test it!
+- http://localhost:4400/log/YYYY-MM-DDTHH (replace with date and time for your bucket) Note: UTC time is used
+  - Example: http://localhost:4400/log/2025-04-01T20
+  - Pagination is supported, by default limit is 100 logs (ex. http://localhost:4400/log/2025-04-01T20?limit=100&offset=200)

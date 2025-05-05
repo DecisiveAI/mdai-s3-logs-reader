@@ -1,0 +1,41 @@
+replicas: 1
+mode: standalone
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: standard
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 250m
+  limits:
+    memory: 512Mi
+    cpu: 500m
+tls:
+  enabled: false
+service:
+  type: ClusterIP
+  ports:
+    console: 9001
+    api: 9000
+buckets:
+  - name: "mdai-collector-logs"
+    policy: "none"
+    purge: false
+    versioning:
+      enabled: false
+  - name: "mdai-platform-logs"
+    policy: "none"
+    purge: false
+    versioning:
+      enabled: false
+  - name: "mdai-event-logs"
+    policy: "none"
+    purge: false
+    versioning:
+      enabled: false
+
+users:
+  - accessKey: admin
+    secretKey: admin123
+    policy: consoleAdmin

@@ -14,31 +14,23 @@ import (
 )
 
 var (
-	s3Client    *s3.Client
-	awsRegion   = "us-east-1"
-	awsEndpoint = "http://localhost:9000"
+	s3Bucket = "mdai-collector-logs"
 )
 
 func main() {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithSharedConfigProfile("local-minio"),
-		config.WithRegion(awsRegion),
 		config.WithClientLogMode(aws.LogRetries),
 	)
 	if err != nil {
 		log.Fatal("unable to load SDK config, ", err)
 	}
 
-	s3Client = s3.NewFromConfig(cfg, func(o *s3.Options) {
-		o.BaseEndpoint = aws.String(awsEndpoint)
-		o.UsePathStyle = true
-	})
+	s3Client := s3.NewFromConfig(cfg)
 
 	r := chi.NewRouter()
-	r.Get("/logs/{timestamp}", func(w http.ResponseWriter, r *http.Request) {
-		internal.ListObjectsHandler(w, r, s3Client)
+	r.Get("/logs/{auditPath}/{timestamp}", func(w http.ResponseWriter, r *http.Request) {
+		internal.ListLogsHandler(w, r, s3Client, s3Bucket)
 	})
-
-	log.Println("Listening on :3000")
-	log.Fatal(http.ListenAndServe(":3000", r))
+	log.Println("Listening on :4400")
+	log.Fatal(http.ListenAndServe(":4400", r)) //Grafana uses port 3000, so making port 4400
 }
