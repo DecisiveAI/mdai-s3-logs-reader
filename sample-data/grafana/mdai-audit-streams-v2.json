@@ -211,7 +211,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -240,7 +241,13 @@
           ],
           "show": false
         },
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Timestamp"
+          }
+        ]
       },
       "pluginVersion": "11.2.2+security-01",
       "targets": [
@@ -258,7 +265,7 @@
           "root_selector": "",
           "source": "url",
           "type": "json",
-          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/mdaihub-sample-hub/${__from:date:YYYY-MM-DDTHH}?start=${__from:date:YYYY-MM-DDTHH}&end=${__to:date:YYYY-MM-DDTHH}",
+          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/hubcollector-collector-logs/${__from:date:isoYYYY-MM-DDTHH}?start=${__from}&end=${__to}",
           "url_options": {
             "data": "",
             "method": "GET"
@@ -350,7 +357,13 @@
           ],
           "show": false
         },
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Timestamp"
+          }
+        ]
       },
       "pluginVersion": "11.2.2+security-01",
       "targets": [
@@ -368,7 +381,7 @@
           "root_selector": "",
           "source": "url",
           "type": "json",
-          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/mdaihub-sample-collector/${__from:date:YYYY-MM-DDTHH}?start=${__from:date:YYYY-MM-DDTHH}&end=${__to:date:YYYY-MM-DDTHH}",
+          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/hubcollector-collector-logs/${__from:date:YYYY-MM-DDTHH}?start=${__from}&end=${__to}",
           "url_options": {
             "data": "",
             "method": "GET"
@@ -415,13 +428,13 @@
     "list": []
   },
   "time": {
-    "from": "now-4h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "browser",
-  "title": "MDAI Audit Stream",
-  "uid": "fefufr0i1v474a",
+  "timezone": "utc",
+  "title": "MDAI Audit Stream v2",
+  "uid": "fefufr0i1v474av2",
   "version": 1,
   "weekStart": ""
 }

@@ -41,19 +41,45 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 	var prefixes []string
 
 	if startParam != "" && endParam != "" {
-		startTime, errStart := time.Parse("2006-01-02T15", startParam)
-		endTime, errEnd := time.Parse("2006-01-02T15", endParam)
+
+		var startTime time.Time
+		var errStart error
+		if startInt, err := strconv.ParseInt(startParam, 10, 64); err == nil {
+			startTime = time.UnixMilli(startInt).UTC()
+		} else {
+			startTime, errStart = time.Parse("2006-01-02T15", startParam)
+		}
+
+		var endTime time.Time
+		var errEnd error
+		if endInt, err := strconv.ParseInt(endParam, 10, 64); err == nil {
+			endTime = time.UnixMilli(endInt).UTC()
+		} else {
+			endTime, errEnd = time.Parse("2006-01-02T15", endParam)
+		}
 
 		if errStart != nil || errEnd != nil {
-			http.Error(w, "Invalid start or end time format. Use YYYY-MM-DDTHH", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode([]map[string]string{
+				{"Error": "Invalid start or end time format. Use YYYY-MM-DDTHH or epoch ms"},
+			})
 			return
 		}
 		if endTime.Before(startTime) {
-			http.Error(w, "End time must be after start time", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode([]map[string]string{
+				{"Error": "End time must be after start time"},
+			})
 			return
 		}
 		if endTime.Sub(startTime) > 4*time.Hour {
-			http.Error(w, "Time range must be 4 hours or less", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode([]map[string]string{
+				{"Error": "Time range must be 4 hours or less"},
+			})
 			return
 		}
 
@@ -80,14 +106,22 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 		returnedLogs = append(returnedLogs, logs...)
 	}
 
-	// Leaving pagination logic here for now until we decide if we want to implement it
-	//paginatedLogs := paginateLogs(returnedLogs, r)
-
-	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(returnedLogs)
-	if err != nil {
-		log.Printf("failed to encode JSON: %v", err)
+	if len(returnedLogs) > 0 {
+		// Leaving pagination logic here for now until we decide if we want to implement it
+		//paginatedLogs := paginateLogs(returnedLogs, r)
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(returnedLogs)
+		if err != nil {
+			log.Printf("failed to encode JSON: %v", err)
+		}
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode([]map[string]string{
+			{"Response": "No logs found for this range"},
+		})
 	}
+	return
 }
 
 func LoadLogsFromS3(ctx context.Context, client S3API, bucket string, prefix string) ([]internalTypes.LogRecord, error) {
