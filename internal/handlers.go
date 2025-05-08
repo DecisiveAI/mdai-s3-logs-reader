@@ -35,22 +35,56 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 		return
 	}
 
-	parsedTime, err := time.Parse("2006-01-02T15", timestamp)
-	if err != nil {
-		http.Error(w, "Invalid timestamp format. Use YYYY-MM-DDTHH", http.StatusBadRequest)
-		return
-	}
-	prefix := fmt.Sprintf("%s/%04d/%02d/%02d/%02d/", auditPath, parsedTime.Year(), parsedTime.Month(), parsedTime.Day(), parsedTime.Hour())
+	startParam := r.URL.Query().Get("start")
+	endParam := r.URL.Query().Get("end")
 
-	returnedLogs, err := LoadLogsFromS3(r.Context(), s3Client, s3Bucket, prefix)
-	if err != nil {
-		return
+	var prefixes []string
+
+	if startParam != "" && endParam != "" {
+		startTime, errStart := time.Parse("2006-01-02T15", startParam)
+		endTime, errEnd := time.Parse("2006-01-02T15", endParam)
+
+		if errStart != nil || errEnd != nil {
+			http.Error(w, "Invalid start or end time format. Use YYYY-MM-DDTHH", http.StatusBadRequest)
+			return
+		}
+		if endTime.Before(startTime) {
+			http.Error(w, "End time must be after start time", http.StatusBadRequest)
+			return
+		}
+		if endTime.Sub(startTime) > 4*time.Hour {
+			http.Error(w, "Time range must be 4 hours or less", http.StatusBadRequest)
+			return
+		}
+
+		for t := startTime; !t.After(endTime); t = t.Add(time.Hour) {
+			prefixes = append(prefixes, fmt.Sprintf("%s/%04d/%02d/%02d/%02d/", auditPath, t.Year(), t.Month(), t.Day(), t.Hour()))
+		}
+	} else {
+		parsedTime, err := time.Parse("2006-01-02T15", timestamp)
+		if err != nil {
+			http.Error(w, "Invalid timestamp format. Use YYYY-MM-DDTHH", http.StatusBadRequest)
+			return
+		}
+		prefixes = []string{fmt.Sprintf("%s/%04d/%02d/%02d/%02d/", auditPath, parsedTime.Year(), parsedTime.Month(), parsedTime.Day(), parsedTime.Hour())}
 	}
 
-	paginatedLogs := paginateLogs(returnedLogs, r)
+	var returnedLogs []internalTypes.LogRecord
+	for _, prefix := range prefixes {
+		ctx := context.Background()
+		logs, err := LoadLogsFromS3(ctx, s3Client, s3Bucket, prefix)
+		if err != nil {
+			log.Printf("Error loading logs for prefix %s: %v", prefix, err)
+			continue
+		}
+		returnedLogs = append(returnedLogs, logs...)
+	}
+
+	// Leaving pagination logic here for now until we decide if we want to implement it
+	//paginatedLogs := paginateLogs(returnedLogs, r)
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(paginatedLogs)
+	err := json.NewEncoder(w).Encode(returnedLogs)
 	if err != nil {
 		log.Printf("failed to encode JSON: %v", err)
 	}
@@ -134,35 +168,36 @@ func retrieveObject(ctx context.Context, client S3API, bucket string, key string
 	return buf.Bytes(), nil
 }
 
+// Leaving pagination logic here for now until we decide if we want to implement it
 // paginates the logs based on the limit and offset query parameters (ex. ?limit=100&offset=200)
-func paginateLogs(logs []internalTypes.LogRecord, r *http.Request) []internalTypes.LogRecord {
-	limit := 100
-	offset := 0
-
-	query := r.URL.Query()
-
-	if l := query.Get("limit"); l != "" {
-		if val, err := strconv.Atoi(l); err == nil {
-			limit = val
-		}
-	}
-	if o := query.Get("offset"); o != "" {
-		if val, err := strconv.Atoi(o); err == nil {
-			offset = val
-		}
-	}
-
-	start := offset
-	end := offset + limit
-	if start > len(logs) {
-		start = len(logs)
-	}
-	if end > len(logs) {
-		end = len(logs)
-	}
-
-	return logs[start:end]
-}
+//func paginateLogs(logs []internalTypes.LogRecord, r *http.Request) []internalTypes.LogRecord {
+//	limit := 1000
+//	offset := 0
+//
+//	query := r.URL.Query()
+//
+//	if l := query.Get("limit"); l != "" {
+//		if val, err := strconv.Atoi(l); err == nil {
+//			limit = val
+//		}
+//	}
+//	if o := query.Get("offset"); o != "" {
+//		if val, err := strconv.Atoi(o); err == nil {
+//			offset = val
+//		}
+//	}
+//
+//	start := offset
+//	end := offset + limit
+//	if start > len(logs) {
+//		start = len(logs)
+//	}
+//	if end > len(logs) {
+//		end = len(logs)
+//	}
+//
+//	return logs[start:end]
+//}
 
 // TODO: Find a better way to handle this
 func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
@@ -195,8 +230,8 @@ func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 				attrs := extractAttributes(recMap)
 
 				records = append(records, internalTypes.LogRecord{
-					Timestamp:         safeString(recMap["timeUnixNano"]),
-					ObservedTimestamp: safeString(recMap["observedTimeUnixNano"]),
+					Timestamp:         parseTimestampNano(safeString(recMap["timeUnixNano"])),
+					ObservedTimestamp: parseTimestampNano(safeString(recMap["observedTimeUnixNano"])),
 					Severity:          safeString(recMap["severityText"]),
 					SeverityNumber:    safeString(recMap["severityNumber"]),
 					Body:              safeString(recMap["body"].(map[string]any)["stringValue"]),
@@ -248,4 +283,11 @@ func safeString(val any) string {
 	default:
 		return fmt.Sprintf("%v", v)
 	}
+}
+
+func parseTimestampNano(ts string) string {
+	if nano, err := strconv.ParseInt(ts, 10, 64); err == nil {
+		return time.Unix(0, nano).UTC().Format(time.RFC3339)
+	}
+	return ts
 }
