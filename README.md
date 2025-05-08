@@ -52,6 +52,10 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
     ```
 
 ### Test it!
-- http://localhost:4400/log/YYYY-MM-DDTHH (replace with date and time for your bucket) Note: UTC time is used
-  - Example: http://localhost:4400/log/2025-04-01T20
-  - Pagination is supported, by default limit is 100 logs (ex. http://localhost:4400/log/2025-04-01T20?limit=100&offset=200)
+- http://localhost:4400/logs/<bucket>/YYYY-MM-DDTHH or with range of up to 4 hours http://localhost:4400/logs/<bucket>/YYYY-MM-DDTHH?end=YYYY-MM-DDTHH&start=YYYY-MM-DDTHH (replace with date and time for your bucket) Note: UTC time is used
+  - Example: http://localhost:4400/logs/mdaihub-sample-hub/2025-04-01T20
+  - Example w/ Range: http://localhost:4400/logs/mdaihub-sample-hub/2025-05-06T17?end=2025-05-06T20&start=2025-05-06T17
+- You can also port-forward Grafana and import the [example dashboard](/sample-data/grafana/mdai-audit-streams.json)
+  ```bash
+  kubectl port-forward svc/mdai-grafana 3000:80 -n mdai
+  ```
