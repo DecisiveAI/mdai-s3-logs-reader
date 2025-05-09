@@ -42,8 +42,10 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 
 	if startParam != "" && endParam != "" {
 
-		var startTime time.Time
-		var errStart error
+		var (
+			startTime time.Time
+			errStart error
+		)
 		if startInt, err := strconv.ParseInt(startParam, 10, 64); err == nil {
 			startTime = time.UnixMilli(startInt).UTC()
 		} else {
