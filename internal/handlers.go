@@ -129,7 +129,6 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 			{"Response": "No logs found for this range"},
 		})
 	}
-	return
 }
 
 func LoadLogsFromS3(ctx context.Context, client S3API, bucket string, prefix string) ([]internalTypes.LogRecord, error) {
