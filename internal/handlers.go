@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -41,21 +42,19 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 	var prefixes []string
 
 	if startParam != "" && endParam != "" {
-
 		var (
 			startTime time.Time
-			errStart error
+			errStart  error
+			endTime   time.Time
+			errEnd    error
 		)
+
 		if startInt, err := strconv.ParseInt(startParam, 10, 64); err == nil {
 			startTime = time.UnixMilli(startInt).UTC()
 		} else {
 			startTime, errStart = time.Parse("2006-01-02T15", startParam)
 		}
 
-		var(
-			endTime time.Time
-			errEnd error
-		)
 		if endInt, err := strconv.ParseInt(endParam, 10, 64); err == nil {
 			endTime = time.UnixMilli(endInt).UTC()
 		} else {
@@ -85,6 +84,11 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 				{"Error": "Time range must be 4 hours or less"},
 			})
 			return
+		}
+
+		if endTime.Sub(startTime) < time.Hour {
+			startTime = startTime.Truncate(time.Hour)
+			endTime = startTime.Add(time.Hour - time.Nanosecond)
 		}
 
 		for t := startTime; !t.After(endTime); t = t.Add(time.Hour) {
@@ -237,15 +241,14 @@ func retrieveObject(ctx context.Context, client S3API, bucket string, key string
 //	return logs[start:end]
 //}
 
-// TODO: Find a better way to handle this
 func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
-	var raw map[string]any
-	err := json.Unmarshal(data, &raw)
+	var rawLog map[string]any
+	err := json.Unmarshal(data, &rawLog)
 	if err != nil {
 		return nil, err
 	}
 
-	resourceLogs, ok := raw["resourceLogs"].([]any)
+	resourceLogs, ok := rawLog["resourceLogs"].([]any)
 	if !ok {
 		return nil, fmt.Errorf("invalid format: missing resourceLogs")
 	}
@@ -268,21 +271,46 @@ func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 				attrs := extractAttributes(recMap)
 
 				records = append(records, internalTypes.LogRecord{
-					Timestamp:         parseTimestampNano(safeString(recMap["timeUnixNano"])),
-					ObservedTimestamp: parseTimestampNano(safeString(recMap["observedTimeUnixNano"])),
-					Severity:          safeString(recMap["severityText"]),
-					SeverityNumber:    safeString(recMap["severityNumber"]),
-					Body:              safeString(recMap["body"].(map[string]any)["stringValue"]),
-					Reason:            attrs["k8s.event.reason"],
-					EventName:         attrs["k8s.event.name"],
-					Pod:               objectName,
-					ServiceName:       resourceAttrs["service.name"],
+					Timestamp:      parseTimestampNano(safeString(recMap["timeUnixNano"])),
+					Severity:       normalizeSeverity(safeString(recMap["severityText"])),
+					SeverityNumber: safeString(recMap["severityNumber"]),
+					Body:           safeString(recMap["body"].(map[string]any)["stringValue"]),
+					Reason:         attrs["k8s.event.reason"],
+					EventName:      attrs["k8s.event.name"],
+					Pod:            objectName,
+					ServiceName:    resourceAttrs["service.name"],
 				})
 			}
 		}
 	}
 
-	return records, nil
+	logMap := make(map[string]internalTypes.LogRecord)
+	for _, parsed := range records {
+		key := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s",
+			parsed.Timestamp,
+			parsed.Severity,
+			parsed.Reason,
+			parsed.EventName,
+			parsed.Pod,
+			parsed.ServiceName,
+			parsed.Body,
+		)
+		existingLog, found := logMap[key]
+		if found {
+			existingLog.Count++
+			logMap[key] = existingLog
+		} else {
+			parsed.Count = 1
+			logMap[key] = parsed
+		}
+	}
+
+	var countedLogs []internalTypes.LogRecord
+	for _, filtered := range logMap {
+		countedLogs = append(countedLogs, filtered)
+	}
+
+	return countedLogs, nil
 }
 
 func extractAttributes(obj any) map[string]string {
@@ -328,4 +356,20 @@ func parseTimestampNano(ts string) string {
 		return time.Unix(0, nano).UTC().Format(time.RFC3339)
 	}
 	return ts
+}
+
+func normalizeSeverity(severity string) string {
+	severity = strings.ToLower(severity)
+	switch strings.ToLower(severity) {
+	case "info", "normal":
+		return "INFO"
+	case "warn", "warning":
+		return "WARN"
+	case "error":
+		return "ERROR"
+	case "fatal":
+		return "FATAL"
+	default:
+		return strings.ToUpper(severity)
+	}
 }

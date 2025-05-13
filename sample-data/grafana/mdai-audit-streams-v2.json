@@ -27,7 +27,7 @@
       "type": "datasource",
       "id": "yesoreyeram-infinity-datasource",
       "name": "Infinity",
-      "version": "3.2.0"
+      "version": "3.2.1"
     }
   ],
   "annotations": {
@@ -265,7 +265,7 @@
           "root_selector": "",
           "source": "url",
           "type": "json",
-          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/hubcollector-collector-logs/${__from:date:isoYYYY-MM-DDTHH}?start=${__from}&end=${__to}",
+          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/hub-monitor-hub-logs/${__from:date:isoYYYY-MM-DDTHH}?start=${__from}&end=${__to}",
           "url_options": {
             "data": "",
             "method": "GET"
@@ -381,7 +381,7 @@
           "root_selector": "",
           "source": "url",
           "type": "json",
-          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/hubcollector-collector-logs/${__from:date:YYYY-MM-DDTHH}?start=${__from}&end=${__to}",
+          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/hub-monitor-collector-logs/${__from:date:YYYY-MM-DDTHH}?start=${__from}&end=${__to}",
           "url_options": {
             "data": "",
             "method": "GET"
