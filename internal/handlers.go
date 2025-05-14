@@ -224,12 +224,10 @@ func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 		return nil, err
 	}
 
-	resourceLogs, ok := rawLog["resourceLogs"].([]any)
-	if !ok {
-		return nil, fmt.Errorf("invalid format: missing resourceLogs")
-	}
-
-	var records []internalTypes.LogRecord
+	var (
+		resourceLogs = rawLog["resourceLogs"].([]any)
+		records      []internalTypes.LogRecord
+	)
 
 	for _, res := range resourceLogs {
 		resMap := res.(map[string]any)
@@ -281,7 +279,7 @@ func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 		}
 	}
 
-	var countedLogs []internalTypes.LogRecord
+	countedLogs := make([]internalTypes.LogRecord, 0, len(logMap))
 	for _, filtered := range logMap {
 		countedLogs = append(countedLogs, filtered)
 	}
@@ -336,7 +334,7 @@ func parseTimestampNano(ts string) string {
 
 func normalizeSeverity(severity string) string {
 	severity = strings.ToLower(severity)
-	switch strings.ToLower(severity) {
+	switch severity {
 	case "info", "normal":
 		return "INFO"
 	case "warn", "warning":
