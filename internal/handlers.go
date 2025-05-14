@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -28,31 +29,83 @@ type S3API interface {
 
 func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client, s3Bucket string) {
 	auditPath := chi.URLParam(r, "auditPath")
-	timestamp := chi.URLParam(r, "timestamp")
 
 	if auditPath == "" {
 		http.Error(w, "Invalid audit path: must be provided", http.StatusBadRequest)
 		return
 	}
 
-	parsedTime, err := time.Parse("2006-01-02T15", timestamp)
-	if err != nil {
-		http.Error(w, "Invalid timestamp format. Use YYYY-MM-DDTHH", http.StatusBadRequest)
-		return
+	startParam := r.URL.Query().Get("start")
+	endParam := r.URL.Query().Get("end")
+
+	var prefixes []string
+
+	if startParam != "" && endParam != "" {
+		var (
+			startTime time.Time
+			endTime   time.Time
+		)
+
+		if startInt, err := strconv.ParseInt(startParam, 10, 64); err == nil {
+			startTime = time.UnixMilli(startInt).UTC()
+		}
+
+		if endInt, err := strconv.ParseInt(endParam, 10, 64); err == nil {
+			endTime = time.UnixMilli(endInt).UTC()
+		}
+
+		if endTime.Before(startTime) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode([]map[string]string{
+				{"Error": "End time must be after start time"},
+			})
+			return
+		}
+		if endTime.Sub(startTime) > 4*time.Hour {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode([]map[string]string{
+				{"Error": "Time range must be 4 hours or less"},
+			})
+			return
+		}
+
+		if endTime.Sub(startTime) < time.Hour {
+			startTime = startTime.Truncate(time.Hour)
+			endTime = startTime.Add(time.Hour - time.Nanosecond)
+		}
+
+		for t := startTime; !t.After(endTime); t = t.Add(time.Hour) {
+			prefixes = append(prefixes, fmt.Sprintf("%s/%04d/%02d/%02d/%02d/", auditPath, t.Year(), t.Month(), t.Day(), t.Hour()))
+		}
 	}
-	prefix := fmt.Sprintf("%s/%04d/%02d/%02d/%02d/", auditPath, parsedTime.Year(), parsedTime.Month(), parsedTime.Day(), parsedTime.Hour())
 
-	returnedLogs, err := LoadLogsFromS3(r.Context(), s3Client, s3Bucket, prefix)
-	if err != nil {
-		return
+	var returnedLogs []internalTypes.LogRecord
+	for _, prefix := range prefixes {
+		ctx := context.Background()
+		logs, err := LoadLogsFromS3(ctx, s3Client, s3Bucket, prefix)
+		if err != nil {
+			log.Printf("Error loading logs for prefix %s: %v", prefix, err)
+			continue
+		}
+		returnedLogs = append(returnedLogs, logs...)
 	}
 
-	paginatedLogs := paginateLogs(returnedLogs, r)
-
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(paginatedLogs)
-	if err != nil {
-		log.Printf("failed to encode JSON: %v", err)
+	if len(returnedLogs) > 0 {
+		// Leaving pagination logic here for now until we decide if we want to implement it
+		//paginatedLogs := paginateLogs(returnedLogs, r)
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(returnedLogs)
+		if err != nil {
+			log.Printf("failed to encode JSON: %v", err)
+		}
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode([]map[string]string{
+			{"Response": "No logs found for this range"},
+		})
 	}
 }
 
@@ -134,50 +187,47 @@ func retrieveObject(ctx context.Context, client S3API, bucket string, key string
 	return buf.Bytes(), nil
 }
 
+// Leaving pagination logic here for now until we decide if we want to implement it
 // paginates the logs based on the limit and offset query parameters (ex. ?limit=100&offset=200)
-func paginateLogs(logs []internalTypes.LogRecord, r *http.Request) []internalTypes.LogRecord {
-	limit := 100
-	offset := 0
+//func paginateLogs(logs []internalTypes.LogRecord, r *http.Request) []internalTypes.LogRecord {
+//	limit := 1000
+//	offset := 0
+//
+//	query := r.URL.Query()
+//
+//	if l := query.Get("limit"); l != "" {
+//		if val, err := strconv.Atoi(l); err == nil {
+//			limit = val
+//		}
+//	}
+//	if o := query.Get("offset"); o != "" {
+//		if val, err := strconv.Atoi(o); err == nil {
+//			offset = val
+//		}
+//	}
+//
+//	start := offset
+//	end := offset + limit
+//	if start > len(logs) {
+//		start = len(logs)
+//	}
+//	if end > len(logs) {
+//		end = len(logs)
+//	}
+//
+//	return logs[start:end]
+//}
 
-	query := r.URL.Query()
-
-	if l := query.Get("limit"); l != "" {
-		if val, err := strconv.Atoi(l); err == nil {
-			limit = val
-		}
-	}
-	if o := query.Get("offset"); o != "" {
-		if val, err := strconv.Atoi(o); err == nil {
-			offset = val
-		}
-	}
-
-	start := offset
-	end := offset + limit
-	if start > len(logs) {
-		start = len(logs)
-	}
-	if end > len(logs) {
-		end = len(logs)
-	}
-
-	return logs[start:end]
-}
-
-// TODO: Find a better way to handle this
 func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
-	var raw map[string]any
-	err := json.Unmarshal(data, &raw)
-	if err != nil {
+	var rawLog map[string]any
+	if err := json.Unmarshal(data, &rawLog); err != nil {
 		return nil, err
 	}
 
-	resourceLogs, ok := raw["resourceLogs"].([]any)
-	if !ok {
-		return nil, fmt.Errorf("invalid format: missing resourceLogs")
-	}
-
-	var records []internalTypes.LogRecord
+	var (
+		resourceLogs = rawLog["resourceLogs"].([]any)
+		records      []internalTypes.LogRecord
+	)
 
 	for _, res := range resourceLogs {
 		resMap := res.(map[string]any)
@@ -195,21 +245,46 @@ func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 				attrs := extractAttributes(recMap)
 
 				records = append(records, internalTypes.LogRecord{
-					Timestamp:         safeString(recMap["timeUnixNano"]),
-					ObservedTimestamp: safeString(recMap["observedTimeUnixNano"]),
-					Severity:          safeString(recMap["severityText"]),
-					SeverityNumber:    safeString(recMap["severityNumber"]),
-					Body:              safeString(recMap["body"].(map[string]any)["stringValue"]),
-					Reason:            attrs["k8s.event.reason"],
-					EventName:         attrs["k8s.event.name"],
-					Pod:               objectName,
-					ServiceName:       resourceAttrs["service.name"],
+					Timestamp:      parseTimestampNano(safeString(recMap["timeUnixNano"])),
+					Severity:       normalizeSeverity(safeString(recMap["severityText"])),
+					SeverityNumber: safeString(recMap["severityNumber"]),
+					Body:           safeString(recMap["body"].(map[string]any)["stringValue"]),
+					Reason:         attrs["k8s.event.reason"],
+					EventName:      attrs["k8s.event.name"],
+					Pod:            objectName,
+					ServiceName:    resourceAttrs["service.name"],
 				})
 			}
 		}
 	}
 
-	return records, nil
+	logMap := make(map[string]internalTypes.LogRecord)
+	for _, parsed := range records {
+		key := fmt.Sprintf("%s|%s|%s|%s|%s|%s|%s",
+			parsed.Timestamp,
+			parsed.Severity,
+			parsed.Reason,
+			parsed.EventName,
+			parsed.Pod,
+			parsed.ServiceName,
+			parsed.Body,
+		)
+		existingLog, found := logMap[key]
+		if found {
+			existingLog.Count++
+			logMap[key] = existingLog
+		} else {
+			parsed.Count = 1
+			logMap[key] = parsed
+		}
+	}
+
+	countedLogs := make([]internalTypes.LogRecord, 0, len(logMap))
+	for _, filtered := range logMap {
+		countedLogs = append(countedLogs, filtered)
+	}
+
+	return countedLogs, nil
 }
 
 func extractAttributes(obj any) map[string]string {
@@ -247,5 +322,28 @@ func safeString(val any) string {
 		return fmt.Sprintf("%d", v)
 	default:
 		return fmt.Sprintf("%v", v)
+	}
+}
+
+func parseTimestampNano(ts string) string {
+	if nano, err := strconv.ParseInt(ts, 10, 64); err == nil {
+		return time.Unix(0, nano).UTC().Format(time.RFC3339)
+	}
+	return ts
+}
+
+func normalizeSeverity(severity string) string {
+	severity = strings.ToLower(severity)
+	switch severity {
+	case "info", "normal":
+		return "INFO"
+	case "warn", "warning":
+		return "WARN"
+	case "error":
+		return "ERROR"
+	case "fatal":
+		return "FATAL"
+	default:
+		return strings.ToUpper(severity)
 	}
 }
