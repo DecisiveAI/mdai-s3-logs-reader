@@ -29,7 +29,6 @@ type S3API interface {
 
 func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client, s3Bucket string) {
 	auditPath := chi.URLParam(r, "auditPath")
-	timestamp := chi.URLParam(r, "timestamp")
 
 	if auditPath == "" {
 		http.Error(w, "Invalid audit path: must be provided", http.StatusBadRequest)
@@ -44,31 +43,17 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 	if startParam != "" && endParam != "" {
 		var (
 			startTime time.Time
-			errStart  error
 			endTime   time.Time
-			errEnd    error
 		)
 
 		if startInt, err := strconv.ParseInt(startParam, 10, 64); err == nil {
 			startTime = time.UnixMilli(startInt).UTC()
-		} else {
-			startTime, errStart = time.Parse("2006-01-02T15", startParam)
 		}
 
 		if endInt, err := strconv.ParseInt(endParam, 10, 64); err == nil {
 			endTime = time.UnixMilli(endInt).UTC()
-		} else {
-			endTime, errEnd = time.Parse("2006-01-02T15", endParam)
 		}
 
-		if errStart != nil || errEnd != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode([]map[string]string{
-				{"Error": "Invalid start or end time format. Use YYYY-MM-DDTHH or epoch ms"},
-			})
-			return
-		}
 		if endTime.Before(startTime) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
@@ -94,13 +79,6 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 		for t := startTime; !t.After(endTime); t = t.Add(time.Hour) {
 			prefixes = append(prefixes, fmt.Sprintf("%s/%04d/%02d/%02d/%02d/", auditPath, t.Year(), t.Month(), t.Day(), t.Hour()))
 		}
-	} else {
-		parsedTime, err := time.Parse("2006-01-02T15", timestamp)
-		if err != nil {
-			http.Error(w, "Invalid timestamp format. Use YYYY-MM-DDTHH", http.StatusBadRequest)
-			return
-		}
-		prefixes = []string{fmt.Sprintf("%s/%04d/%02d/%02d/%02d/", auditPath, parsedTime.Year(), parsedTime.Month(), parsedTime.Day(), parsedTime.Hour())}
 	}
 
 	var returnedLogs []internalTypes.LogRecord
