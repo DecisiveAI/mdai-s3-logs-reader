@@ -220,8 +220,7 @@ func retrieveObject(ctx context.Context, client S3API, bucket string, key string
 
 func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 	var rawLog map[string]any
-	err := json.Unmarshal(data, &rawLog)
-	if err != nil {
+	if err := json.Unmarshal(data, &rawLog); err != nil {
 		return nil, err
 	}
 
