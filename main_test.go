@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/decisiveai/mdai-s3-logs-reader/internal"
 )
@@ -99,9 +100,7 @@ func TestListLogsHandler(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 	}
-	if !bytes.Contains(body, []byte("Scaled up replica set")) {
-		t.Errorf("Expected log content not found in response: %s", body)
-	}
+	assert.Contains(t, body, []byte("Scaled up replica set"), "Expected log content not found in response: %s", body)
 }
 
 func TestLoadLogsFromS3(t *testing.T) {
@@ -156,12 +155,8 @@ func TestLoadLogsFromS3(t *testing.T) {
 
 			ctx := context.TODO()
 			logs, err := internal.LoadLogsFromS3(ctx, mockClient, bucket, tt.prefix)
-			if err != nil {
-				t.Fatalf("Expect no error, got %v", err)
-			}
-			if len(logs) == 0 {
-				t.Fatalf("Expected at least one log record, got zero")
-			}
+			assert.NoError(t, err)
+			assert.NotZero(t, len(logs), "Expected at least one log record")
 			t.Logf("Success for %s: parsed %d records. First: %+v", tt.name, len(logs), logs[0])
 		})
 	}
@@ -203,11 +198,8 @@ func TestGetObjectFromS3(t *testing.T) {
 			}
 			ctx := context.TODO()
 			_, err := internal.RetrieveObject(ctx, mockClient, tt.bucket, tt.key)
-			if err != nil {
-				t.Fatalf("Expect no error, got %v", err)
-			} else {
-				t.Logf("Success! Test %s", tt.name)
-			}
+			assert.NoError(t, err)
+			t.Logf("Success! Test %s", tt.name)
 		})
 	}
 }
@@ -250,28 +242,19 @@ func TestListObjectsFromS3(t *testing.T) {
 			}
 			ctx := context.TODO()
 			content, err := internal.ListObjects(ctx, mockClient, tt.bucket, tt.prefix)
-			if err != nil {
-				t.Fatalf("expect no error, got %v", err)
-			} else {
-				t.Logf("Success! Test %s output: %q", tt.name, content)
-			}
+			assert.NoError(t, err, "Expected no error from ListObjects")
+			t.Logf("Success! Test %s output: %+v", tt.name, content)
 		})
 	}
 }
 
 func TestParseLogRecords(t *testing.T) {
 	testFile1, err := os.ReadFile(logFile1)
-	if err != nil {
-		t.Fatalf("failed to read file: %v", err)
-	}
+	assert.NoError(t, err)
 	testFile2, err := os.ReadFile(logFile2)
-	if err != nil {
-		t.Fatalf("failed to read file: %v", err)
-	}
+	assert.NoError(t, err)
 	testFile3, err := os.ReadFile(logFile3)
-	if err != nil {
-		t.Fatalf("failed to read file: %v", err)
-	}
+	assert.NoError(t, err)
 
 	cases := []struct {
 		name string
@@ -285,12 +268,8 @@ func TestParseLogRecords(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			content, err := internal.ParseLogRecords(tt.body)
-			if err != nil {
-				t.Fatalf("expect no error, got %v", err)
-			}
-			if len(content) == 0 {
-				t.Fatalf("expected at least one record, got zero")
-			}
+			assert.NoError(t, err)
+			assert.NotZero(t, len(content), "Expected at least one log record")
 			rec := content[0]
 			if rec.Timestamp == "" || rec.Body == "" {
 				t.Errorf("missing expected fields in record: %+v", rec)
