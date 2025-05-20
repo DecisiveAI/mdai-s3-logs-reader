@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-chi/chi/v5"
@@ -15,21 +16,21 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/decisiveai/mdai-s3-logs-reader/internal"
 )
 
 // https://docs.aws.amazon.com/sdk-for-go/v2/developer-guide/unit-testing.html
 
-var (
-	bucket     = "mdai-collector-logs"
-	prefix     = "/hub-monitor-hub-logs/2025/01/17/02/"
-	auditPath  = "hub-monitor-hub-logs"
-	key        = "some-logfile.json"
-	logFile1   = "sample-data/hub-logs-sample.json"
-	logFile2   = "sample-data/collector-logs-sample.json"
-	logFile3   = "sample-data/audit-logs-sample.json"
-	expectTime = time.Date(2023, 1, 2, 3, 4, 5, 0, time.UTC)
+const (
+	bucket    = "mdai-collector-logs"
+	prefix    = "/hub-monitor-hub-logs/2025/01/17/02/"
+	auditPath = "hub-monitor-hub-logs"
+	key       = "some-logfile.json"
+	logFile1  = "sample-data/hub-logs-sample.json"
+	logFile2  = "sample-data/collector-logs-sample.json"
+	logFile3  = "sample-data/audit-logs-sample.json"
 )
 
 type mockS3Client struct {
@@ -45,68 +46,113 @@ func (m *mockS3Client) ListObjectsV2(ctx context.Context, params *s3.ListObjects
 }
 
 func TestListLogsHandler(t *testing.T) {
-	testFile1, _ := os.ReadFile(logFile1)
-
-	mockClient := &mockS3Client{
-		ListObjectsV2Func: func(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error) {
-			expectedPrefixes := map[string]bool{
+	cases := []struct {
+		name           string
+		filePath       string
+		requestURL     string
+		expectPrefixes map[string]bool
+	}{
+		{
+			name:       "test1",
+			filePath:   logFile1,
+			requestURL: "/logs/hub-monitor-hub-logs/files?start=1737080400000&end=1737084000000",
+			expectPrefixes: map[string]bool{
 				"hub-monitor-hub-logs/2025/01/17/02/": true,
 				"hub-monitor-hub-logs/2025/01/17/03/": true,
-			}
-			actual := "<nil>"
-			if params.Prefix != nil {
-				actual = *params.Prefix
-				t.Logf("ListObjectsV2Func called with prefix: %q", actual)
-			}
-			if !expectedPrefixes[actual] {
-				t.Fatalf("expected prefix to be one of %v, got %q", keys(expectedPrefixes), actual)
-			}
-			return &s3.ListObjectsV2Output{
-				Contents: []types.Object{
-					{
-						Key:          aws.String(logFile1),
-						LastModified: aws.Time(expectTime),
-					},
+			},
+		},
+		{
+			name:       "test2",
+			filePath:   logFile2,
+			requestURL: "/logs/hub-monitor-hub-logs/files?start=1737084000000&end=1737087600000",
+			expectPrefixes: map[string]bool{
+				"hub-monitor-hub-logs/2025/01/17/03/": true,
+				"hub-monitor-hub-logs/2025/01/17/04/": true,
+			},
+		},
+		{
+			name:       "test3",
+			filePath:   logFile3,
+			requestURL: "/logs/hub-monitor-hub-logs/files?start=1737087600000&end=1737091200000",
+			expectPrefixes: map[string]bool{
+				"hub-monitor-hub-logs/2025/01/17/04/": true,
+				"hub-monitor-hub-logs/2025/01/17/05/": true,
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			testFile, err := os.ReadFile(tt.filePath)
+			require.NoError(t, err)
+
+			expectTime := time.Date(2023, 1, 2, 3, 4, 5, 0, time.UTC)
+
+			mockClient := &mockS3Client{
+				ListObjectsV2Func: func(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error) {
+					actual := "<nil>"
+					if params.Prefix != nil {
+						actual = *params.Prefix
+						t.Logf("ListObjectsV2Func called with prefix: %q", actual)
+					}
+					if !tt.expectPrefixes[actual] {
+						t.Fatalf("expected prefix to be one of %v, got %q", keys(tt.expectPrefixes), actual)
+					}
+					return &s3.ListObjectsV2Output{
+						Contents: []types.Object{
+							{
+								Key:          aws.String(tt.filePath),
+								LastModified: aws.Time(expectTime),
+							},
+						},
+					}, nil
 				},
-			}, nil
-		},
-		GetObjectFunc: func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
-			return &s3.GetObjectOutput{
-				Body: io.NopCloser(bytes.NewReader(testFile1)),
-			}, nil
-		},
+				GetObjectFunc: func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
+					return &s3.GetObjectOutput{
+						Body: io.NopCloser(bytes.NewReader(testFile)),
+					}, nil
+				},
+			}
+
+			req := httptest.NewRequest("GET", tt.requestURL, nil)
+			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+				URLParams: chi.RouteParams{
+					Keys:   []string{"auditPath"},
+					Values: []string{auditPath},
+				},
+			}))
+
+			w := httptest.NewRecorder()
+			internal.ListLogsHandler(w, req, mockClient, bucket)
+			resp := w.Result()
+			defer func() { _ = resp.Body.Close() }()
+			body, _ := io.ReadAll(resp.Body)
+
+			t.Logf("HTTP status: %d", resp.StatusCode)
+			assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected status 200, got %d", resp.StatusCode)
+
+			var logs []struct {
+				Timestamp string `json:"timestamp"`
+				Body      string `json:"body"`
+			}
+			err = json.Unmarshal(body, &logs)
+			assert.NoError(t, err, "Failed to parse response JSON")
+			assert.NotZero(t, len(logs), "Expected at least one log record in HTTP response")
+
+			for i, rec := range logs {
+				assert.NotEmpty(t, rec.Timestamp, "Missing timestamp in record %d: %+v", i, rec)
+				assert.NotEmpty(t, rec.Body, "Missing body in record %d: %+v", i, rec)
+			}
+			t.Logf("First log record in HTTP response: %+v", logs[0])
+		})
 	}
-
-	req := httptest.NewRequest("GET",
-		"/logs/hub-monitor-hub-logs/files?start=1737080400000&end=1737084000000",
-		nil)
-	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
-		URLParams: chi.RouteParams{
-			Keys:   []string{"auditPath"},
-			Values: []string{auditPath},
-		},
-	}))
-
-	w := httptest.NewRecorder()
-	internal.ListLogsHandler(w, req, mockClient, bucket)
-	resp := w.Result()
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	t.Logf("HTTP status: %d", resp.StatusCode)
-	// Uncomment the following line to see the response body in case of debugging
-	//t.Logf("Response body: %s", string(body))
-
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("Expected status 200, got %d", resp.StatusCode)
-	}
-	assert.Contains(t, body, []byte("Scaled up replica set"), "Expected log content not found in response: %s", body)
 }
 
 func TestLoadLogsFromS3(t *testing.T) {
 	testFile1, _ := os.ReadFile(logFile1)
 	testFile2, _ := os.ReadFile(logFile2)
 	testFile3, _ := os.ReadFile(logFile3)
+	expectTime := time.Date(2023, 1, 2, 3, 4, 5, 0, time.UTC)
 
 	cases := []struct {
 		name     string
@@ -205,6 +251,7 @@ func TestGetObjectFromS3(t *testing.T) {
 }
 
 func TestListObjectsFromS3(t *testing.T) {
+	expectTime := time.Date(2023, 1, 2, 3, 4, 5, 0, time.UTC)
 	cases := []struct {
 		name   string
 		bucket string
@@ -250,11 +297,11 @@ func TestListObjectsFromS3(t *testing.T) {
 
 func TestParseLogRecords(t *testing.T) {
 	testFile1, err := os.ReadFile(logFile1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	testFile2, err := os.ReadFile(logFile2)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	testFile3, err := os.ReadFile(logFile3)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	cases := []struct {
 		name string
