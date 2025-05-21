@@ -245,7 +245,7 @@ func ParseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 				recMap := rec.(map[string]any)
 				attrs := extractAttributes(recMap)
 
-				records = append(records, internalTypes.LogRecord{
+				logRecord := internalTypes.LogRecord{
 					Timestamp:      parseTimestampNano(safeString(recMap["timeUnixNano"])),
 					Severity:       normalizeSeverity(safeString(recMap["severityText"])),
 					SeverityNumber: safeString(recMap["severityNumber"]),
@@ -254,7 +254,11 @@ func ParseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 					EventName:      attrs["k8s.event.name"],
 					Pod:            objectName,
 					ServiceName:    resourceAttrs["service.name"],
-				})
+				}
+				if logRecord.Timestamp == "" {
+					continue
+				}
+				records = append(records, logRecord)
 			}
 		}
 	}
