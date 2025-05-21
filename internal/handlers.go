@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-chi/chi/v5"
@@ -27,7 +27,7 @@ type S3API interface {
 	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
 }
 
-func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client, s3Bucket string) {
+func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client S3API, s3Bucket string) {
 	auditPath := chi.URLParam(r, "auditPath")
 
 	if auditPath == "" {
@@ -112,19 +112,19 @@ func ListLogsHandler(w http.ResponseWriter, r *http.Request, s3Client *s3.Client
 func LoadLogsFromS3(ctx context.Context, client S3API, bucket string, prefix string) ([]internalTypes.LogRecord, error) {
 	var returnedLogs []internalTypes.LogRecord
 
-	listed, err := listObjects(ctx, client, bucket, prefix)
+	listed, err := ListObjects(ctx, client, bucket, prefix)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, obj := range listed {
-		data, err := retrieveObject(ctx, client, bucket, obj.Key)
+		data, err := RetrieveObject(ctx, client, bucket, obj.Key)
 		if err != nil {
 			log.Printf("Error downloading %s: %v", obj.Key, err)
 			continue
 		}
 
-		logs, err := parseLogRecords(data)
+		logs, err := ParseLogRecords(data)
 		if err != nil {
 			log.Printf("Error parsing logs from %s: %v", obj.Key, err)
 			continue
@@ -136,7 +136,7 @@ func LoadLogsFromS3(ctx context.Context, client S3API, bucket string, prefix str
 	return returnedLogs, nil
 }
 
-func listObjects(ctx context.Context, client S3API, bucket string, prefix string) ([]internalTypes.ListedObject, error) {
+func ListObjects(ctx context.Context, client S3API, bucket string, prefix string) ([]internalTypes.ListedObject, error) {
 	var err error
 	var output *s3.ListObjectsV2Output
 	input := &s3.ListObjectsV2Input{
@@ -172,19 +172,20 @@ func listObjects(ctx context.Context, client S3API, bucket string, prefix string
 	return listed, err
 }
 
-func retrieveObject(ctx context.Context, client S3API, bucket string, key string) ([]byte, error) {
-	buf := manager.NewWriteAtBuffer([]byte{})
-	downloader := manager.NewDownloader(client)
-
-	_, err := downloader.Download(ctx, buf, &s3.GetObjectInput{
+func RetrieveObject(ctx context.Context, client S3API, bucket, key string) ([]byte, error) {
+	resp, err := client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	return buf.Bytes(), nil
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("error closing response body: %v", err)
+		}
+	}()
+	return io.ReadAll(resp.Body)
 }
 
 // Leaving pagination logic here for now until we decide if we want to implement it
@@ -218,7 +219,7 @@ func retrieveObject(ctx context.Context, client S3API, bucket string, key string
 //	return logs[start:end]
 //}
 
-func parseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
+func ParseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 	var rawLog map[string]any
 	if err := json.Unmarshal(data, &rawLog); err != nil {
 		return nil, err

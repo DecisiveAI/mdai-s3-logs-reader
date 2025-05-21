@@ -32,11 +32,11 @@ test: tidy vendor
 
 .PHONY: tidy
 tidy:
-	go mod tidy
+	@go mod tidy
 
 .PHONY: vendor
 vendor:
-	go mod vendor
+	@go mod vendor
 
 .PHONY: helm
 helm:
