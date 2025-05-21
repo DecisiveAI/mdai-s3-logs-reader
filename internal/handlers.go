@@ -180,7 +180,11 @@ func RetrieveObject(ctx context.Context, client S3API, bucket, key string) ([]by
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("error closing response body: %v", err)
+		}
+	}()
 	return io.ReadAll(resp.Body)
 }
 
