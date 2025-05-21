@@ -321,8 +321,6 @@ func safeString(val any) string {
 	switch v := val.(type) {
 	case string:
 		return v
-	case float64:
-		return fmt.Sprintf("%.0f", v)
 	case int:
 		return fmt.Sprintf("%d", v)
 	default:
