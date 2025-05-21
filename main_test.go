@@ -90,14 +90,11 @@ func TestListLogsHandler(t *testing.T) {
 
 			mockClient := &mockS3Client{
 				ListObjectsV2Func: func(ctx context.Context, params *s3.ListObjectsV2Input, optFns ...func(*s3.Options)) (*s3.ListObjectsV2Output, error) {
-					actual := "<nil>"
-					if params.Prefix != nil {
-						actual = *params.Prefix
-						t.Logf("ListObjectsV2Func called with prefix: %q", actual)
-					}
-					if !tt.expectPrefixes[actual] {
-						t.Fatalf("expected prefix to be one of %v, got %q", keys(tt.expectPrefixes), actual)
-					}
+					require.NotNil(t, params.Prefix, "Prefix should not be nil")
+					actual := *params.Prefix
+					t.Logf("ListObjectsV2Func called with prefix: %q", actual)
+					require.Contains(t, tt.expectPrefixes, actual,
+						"expected prefix to be one of %v, got %q", keys(tt.expectPrefixes), actual)
 					return &s3.ListObjectsV2Output{
 						Contents: []types.Object{
 							{
@@ -125,25 +122,28 @@ func TestListLogsHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 			internal.ListLogsHandler(w, req, mockClient, bucket)
 			resp := w.Result()
-			defer func() { _ = resp.Body.Close() }()
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Logf("error closing response body: %v", err)
+				}
+			}()
 			body, _ := io.ReadAll(resp.Body)
 
-			t.Logf("HTTP status: %d", resp.StatusCode)
 			assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected status 200, got %d", resp.StatusCode)
-
 			var logs []struct {
 				Timestamp string `json:"timestamp"`
 				Body      string `json:"body"`
 			}
 			err = json.Unmarshal(body, &logs)
-			assert.NoError(t, err, "Failed to parse response JSON")
+			require.NoError(t, err, "Failed to parse response JSON")
 			assert.NotZero(t, len(logs), "Expected at least one log record in HTTP response")
 
 			for i, rec := range logs {
 				assert.NotEmpty(t, rec.Timestamp, "Missing timestamp in record %d: %+v", i, rec)
 				assert.NotEmpty(t, rec.Body, "Missing body in record %d: %+v", i, rec)
 			}
-			t.Logf("First log record in HTTP response: %+v", logs[0])
+			t.Logf("[%s] HTTP status: %d", tt.name, resp.StatusCode)
+			t.Logf("[%s] First log record: %+v", tt.name, logs[0])
 		})
 	}
 }
