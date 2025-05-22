@@ -244,6 +244,9 @@ func ParseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 			for _, rec := range logRecords {
 				recMap := rec.(map[string]any)
 				attrs := extractAttributes(recMap)
+				if recMap["timeUnixNano"] == nil || recMap["timeUnixNano"] == "" {
+					continue
+				}
 
 				records = append(records, internalTypes.LogRecord{
 					Timestamp:      parseTimestampNano(safeString(recMap["timeUnixNano"])),

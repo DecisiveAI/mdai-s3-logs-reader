@@ -29,8 +29,9 @@ const (
 	auditPath = "hub-monitor-hub-logs"
 	key       = "some-logfile.json"
 	logFile1  = "sample-data/hub-logs-sample.json"
-	logFile2  = "sample-data/collector-logs-sample.json"
-	logFile3  = "sample-data/audit-logs-sample.json"
+	// logFile2, the first log timestamp is empty to test parsing filter for timestamp
+	logFile2 = "sample-data/collector-logs-sample.json"
+	logFile3 = "sample-data/audit-logs-sample.json"
 )
 
 type mockS3Client struct {
@@ -164,6 +165,7 @@ func TestLoadLogsFromS3(t *testing.T) {
 		{"case1", bucket, testFile1, logFile1, prefix},
 		{"case2", bucket, testFile2, logFile2, prefix},
 		{"case3", bucket, testFile3, logFile3, prefix},
+		{"case4", bucket, testFile1, logFile1, prefix},
 	}
 
 	for _, tt := range cases {
