@@ -244,8 +244,11 @@ func ParseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 			for _, rec := range logRecords {
 				recMap := rec.(map[string]any)
 				attrs := extractAttributes(recMap)
+				if recMap["timeUnixNano"] == nil || recMap["timeUnixNano"] == "" {
+					continue
+				}
 
-				logRecord := internalTypes.LogRecord{
+				records = append(records, internalTypes.LogRecord{
 					Timestamp:      parseTimestampNano(safeString(recMap["timeUnixNano"])),
 					Severity:       normalizeSeverity(safeString(recMap["severityText"])),
 					SeverityNumber: safeString(recMap["severityNumber"]),
@@ -254,11 +257,7 @@ func ParseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 					EventName:      attrs["k8s.event.name"],
 					Pod:            objectName,
 					ServiceName:    resourceAttrs["service.name"],
-				}
-				if logRecord.Timestamp == "" {
-					continue
-				}
-				records = append(records, logRecord)
+				})
 			}
 		}
 	}
@@ -321,6 +320,8 @@ func safeString(val any) string {
 	switch v := val.(type) {
 	case string:
 		return v
+	case float64:
+		return fmt.Sprintf("%.0f", v)
 	case int:
 		return fmt.Sprintf("%d", v)
 	default:
