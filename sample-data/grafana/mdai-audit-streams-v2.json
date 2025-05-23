@@ -134,33 +134,40 @@
           "root_selector": "",
           "source": "url",
           "type": "json",
-          "url": "http://event-handler-webservice.mdai.svc.cluster.local:8081/events",
+          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/hub-monitor-audit-logs/${__from:date:isoYYYY-MM-DDTHH}?start=${__from}&end=${__to}",
           "url_options": {
             "data": "",
             "method": "GET"
           }
         }
       ],
-      "title": "MDAI OODA Events",
+      "title": "MDAI Automations Logs",
       "transformations": [
         {
           "id": "organize",
           "options": {
             "excludeByName": {
+              "count": true,
               "eventName": true,
               "name": true
             },
             "includeByName": {},
             "indexByName": {
-              "context": 4,
-              "event": 1,
-              "hubName": 2,
-              "payload": 5,
+              "body": 3,
+              "count": 10,
+              "expression": 5,
+              "metricName": 6,
+              "relevantLabelValues": 7,
+              "serviceName": 4,
+              "severity": 1,
+              "severityNumber": 2,
+              "status": 8,
               "timestamp": 0,
-              "trigger": 3
+              "value": 9
             },
             "renameByName": {
               "Event": "Event",
+              "body": "Body",
               "context": "Context",
               "event": "Event",
               "expression": "Expression",
@@ -169,6 +176,10 @@
               "operation": "Action",
               "operation (allValues)": "Operation",
               "payload": "Result",
+              "relevantLabelValues": "Variable",
+              "serviceName": "Service",
+              "severity": "Severity",
+              "severityNumber": "SeverityNum",
               "status": "Status",
               "stored_variables": "Filtered Variables",
               "target": "Modified",
@@ -428,7 +439,7 @@
     "list": []
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
