@@ -20,7 +20,7 @@ spec:
       serviceAccountName: mdai-s3-logs-reader
       containers:
         - name: mdai-s3-logs-reader
-          image: mdai-s3-logs-reader:0.0.1
+          image: public.ecr.aws/decisiveai/mdai-s3-logs-reader:latest
           envFrom:
             - secretRef:
                 name: aws-credentials
