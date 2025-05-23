@@ -58,7 +58,7 @@
         "type": "yesoreyeram-infinity-datasource",
         "uid": "${DS_INFINTYJSON}"
       },
-      "description": "MDAI OODA Loop events, actions, and collector restarts",
+      "description": "MDAI automation logs showing events, actions, and collector restarts",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -149,7 +149,8 @@
             "excludeByName": {
               "count": true,
               "eventName": true,
-              "name": true
+              "name": true,
+              "severityNumber": false
             },
             "includeByName": {},
             "indexByName": {
@@ -439,7 +440,7 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {},
