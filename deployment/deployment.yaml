@@ -24,6 +24,11 @@ spec:
           envFrom:
             - secretRef:
                 name: aws-credentials
+          env:
+            - name: AWS_REGION
+              value: "us-east-1"
+            - name: S3_BUCKET
+              value: "mdai-collector-logs"
           ports:
             - containerPort: 4400
               name: http
