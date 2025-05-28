@@ -27,7 +27,7 @@
       "type": "datasource",
       "id": "yesoreyeram-infinity-datasource",
       "name": "Infinity",
-      "version": "3.2.1"
+      "version": "3.2.2"
     }
   ],
   "annotations": {
@@ -134,7 +134,7 @@
           "root_selector": "",
           "source": "url",
           "type": "json",
-          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/hub-monitor-audit-logs/${__from:date:isoYYYY-MM-DDTHH}?start=${__from}&end=${__to}",
+          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/${mdaiCollectorName}-audit-logs/${__from:date:isoYYYY-MM-DDTHH}?start=${__from}&end=${__to}",
           "url_options": {
             "data": "",
             "method": "GET"
@@ -277,7 +277,7 @@
           "root_selector": "",
           "source": "url",
           "type": "json",
-          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/hub-monitor-hub-logs/${__from:date:isoYYYY-MM-DDTHH}?start=${__from}&end=${__to}",
+          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/${mdaiCollectorName}-hub-logs/${__from:date:isoYYYY-MM-DDTHH}?start=${__from}&end=${__to}",
           "url_options": {
             "data": "",
             "method": "GET"
@@ -393,7 +393,7 @@
           "root_selector": "",
           "source": "url",
           "type": "json",
-          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/hub-monitor-collector-logs/${__from:date:YYYY-MM-DDTHH}?start=${__from}&end=${__to}",
+          "url": "http://mdai-s3-logs-reader-service.mdai.svc.cluster.local:4400/logs/${mdaiCollectorName}-collector-logs/${__from:date:YYYY-MM-DDTHH}?start=${__from}&end=${__to}",
           "url_options": {
             "data": "",
             "method": "GET"
@@ -405,7 +405,9 @@
         {
           "id": "organize",
           "options": {
-            "excludeByName": {},
+            "excludeByName": {
+              "name": true
+            },
             "includeByName": {},
             "indexByName": {
               "body": 5,
@@ -437,10 +439,32 @@
     "mdai"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "hub-monitor",
+          "value": "hub-monitor"
+        },
+        "description": "Use this field if mdai collector name is changed in set up. Defaulted to hub-monitor.",
+        "hide": 0,
+        "label": "MDAI Collector Name",
+        "name": "mdaiCollectorName",
+        "options": [
+          {
+            "selected": true,
+            "text": "hub-monitor",
+            "value": "hub-monitor"
+          }
+        ],
+        "query": "hub-monitor",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},

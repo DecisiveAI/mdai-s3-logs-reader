@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      containers:
+        - name: {{ .Values.name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          ports:
+            - containerPort: 4400
+          envFrom:
+            - secretRef:
+                name: {{ .Values.awsAccessKeySecret }}
+          env:
+            - name: AWS_REGION
+              value: {{ .Values.AWS_REGION }}
+            - name: S3_BUCKET
+              value: {{ .Values.S3_BUCKET }}
