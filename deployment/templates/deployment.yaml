@@ -1,29 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.deployment.name }}
-  namespace: {{ .Values.deployment.namespace }}
+  name: {{ .Values.name }}
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ .Values.deployment.name }}
+      app: {{ .Values.name }}
   template:
     metadata:
       labels:
-        app: {{ .Values.deployment.name }}
+        app: {{ .Values.name }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
-        - name: {{ .Values.deployment.name }}
+        - name: {{ .Values.name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           ports:
-            - containerPort: {{ .Values.deployment.containerPort }}
+            - containerPort: {{ .Values.containerPort }}
           envFrom:
             - secretRef:
-                name: {{ .Values.deployment.awsAccessKeySecret }}
+                name: {{ .Values.awsAccessKeySecret }}
           env:
             - name: AWS_REGION
-              value: {{ .Values.deployment.AWS_REGION }}
+              value: {{ .Values.AWS_REGION }}
             - name: S3_BUCKET
-              value: {{ .Values.deployment.S3_BUCKET }}
+              value: {{ .Values.S3_BUCKET }}
