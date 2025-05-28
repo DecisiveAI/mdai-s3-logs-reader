@@ -41,7 +41,7 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
   ```
 - Apply service account, service, and deployment
   ```bash
-  kubectl apply -f -f deployment/service.yaml -f deployment/deployment.yaml
+  kubectl apply -f deployment/service.yaml -f deployment/deployment.yaml
   ```
 - Check deployment status
   ```bash
