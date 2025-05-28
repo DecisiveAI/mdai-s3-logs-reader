@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -14,11 +15,13 @@ import (
 )
 
 var (
-	s3Bucket = "mdai-collector-logs"
+	s3Bucket = os.Getenv("S3_BUCKET")
+	s3Region = os.Getenv("AWS_REGION")
 )
 
 func main() {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion(os.Getenv(s3Region)),
 		config.WithClientLogMode(aws.LogRetries),
 	)
 	if err != nil {

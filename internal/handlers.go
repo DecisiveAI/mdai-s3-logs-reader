@@ -249,14 +249,28 @@ func ParseLogRecords(data []byte) ([]internalTypes.LogRecord, error) {
 				}
 
 				records = append(records, internalTypes.LogRecord{
-					Timestamp:      parseTimestampNano(safeString(recMap["timeUnixNano"])),
-					Severity:       normalizeSeverity(safeString(recMap["severityText"])),
-					SeverityNumber: safeString(recMap["severityNumber"]),
-					Body:           safeString(recMap["body"].(map[string]any)["stringValue"]),
-					Reason:         attrs["k8s.event.reason"],
-					EventName:      attrs["k8s.event.name"],
-					Pod:            objectName,
-					ServiceName:    resourceAttrs["service.name"],
+					Timestamp:           parseTimestampNano(safeString(recMap["timeUnixNano"])),
+					Severity:            normalizeSeverity(safeString(recMap["severityText"])),
+					SeverityNumber:      safeString(recMap["severityNumber"]),
+					Body:                safeString(recMap["body"].(map[string]any)["stringValue"]),
+					Reason:              attrs["k8s.event.reason"],
+					EventName:           attrs["k8s.event.name"],
+					Pod:                 objectName,
+					ServiceName:         resourceAttrs["service.name"],
+					Controller:          attrs["controller"],
+					ControllerGroup:     attrs["controllerGroup"],
+					ControllerKind:      attrs["controllerKind"],
+					MdaiHub:             attrs["MdaiHub"],
+					Namespace:           attrs["namespace"],
+					Name:                attrs["name"],
+					ReconcileID:         attrs["reconcileID"],
+					HubName:             attrs["hub_name"],
+					Event:               attrs["event"],
+					Status:              attrs["status"],
+					Expression:          attrs["expression"],
+					MetricName:          attrs["metricName"],
+					Value:               attrs["value"],
+					RelevantLabelValues: attrs["relevantLabelValues"],
 				})
 			}
 		}
