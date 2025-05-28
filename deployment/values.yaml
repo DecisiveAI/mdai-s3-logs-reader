@@ -1,13 +1,9 @@
 namespace: mdai
 name: mdai-s3-logs-reader
-replicas: 1
 AWS_REGION: "us-east-1"
 S3_BUCKET: "mdai-collector-logs"
 awsAccessKeySecret: aws-credentials
 image:
-repository: public.ecr.aws/decisiveai/mdai-s3-logs-reader
-# tag: 0.0.1
+  repository: public.ecr.aws/decisiveai/mdai-s3-logs-reader
+  # tag: 0.0.1
 containerPort: 4400
-port: 4400
-targetPort: 4400
-type: ClusterIP
