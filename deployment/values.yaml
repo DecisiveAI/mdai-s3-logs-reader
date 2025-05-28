@@ -6,4 +6,3 @@ awsAccessKeySecret: aws-credentials
 image:
   repository: public.ecr.aws/decisiveai/mdai-s3-logs-reader
   # tag: 0.0.1
-containerPort: 4400
