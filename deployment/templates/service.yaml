@@ -4,10 +4,10 @@ metadata:
   name: {{ .Values.name }}
   namespace: mdai
   labels:
-    app: mdai-collector-logs
+    app: mdai-s3-logs-reader
 spec:
   selector:
-    app: mdai-collector-logs
+    app: mdai-s3-logs-reader
   ports:
     - port: 4400
       targetPort: http
