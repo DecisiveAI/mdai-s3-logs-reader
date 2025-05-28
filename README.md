@@ -34,7 +34,7 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
   ```bash
   kind load docker-image mdai-s3-logs-reader:0.0.1 --name mdai
   ```
-- Create a secret.yaml using [template-secret.yaml]
+- Create a secret.yaml using template in [mdai-helm-chart](https://github.com/DecisiveAI/mdai-helm-chart?tab=readme-ov-file#option-a-using-mdai-collector-to-collect-component-telemetry)
 - Apply the secret.yaml to the cluster
   ```bash
   kubectl apply -f secret.yaml
