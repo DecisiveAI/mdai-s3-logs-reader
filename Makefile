@@ -1,5 +1,5 @@
 DOCKER_TAG ?= latest
-LATEST_TAG := $(shell git describe --tags --abbrev=0 $(git rev-parse --abbrev-ref HEAD) | sed 's/^v//')
+LATEST_TAG := $(shell git tag --sort=-v:refname | head -n1 | sed 's/^v//')
 CHART_VERSION ?= $(LATEST_TAG)
 CHART_DIR := ./deployment
 CHART_NAME := mdai-s3-logs-reader
