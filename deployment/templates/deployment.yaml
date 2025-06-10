@@ -16,7 +16,8 @@ spec:
         - name: {{ .Values.name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           ports:
-            - containerPort: 4400
+            - name: http
+              containerPort: 4400
           envFrom:
             - secretRef:
                 name: {{ .Values.awsAccessKeySecret }}
