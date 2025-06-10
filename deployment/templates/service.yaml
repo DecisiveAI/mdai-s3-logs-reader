@@ -9,8 +9,8 @@ spec:
   selector:
     app: mdai-s3-logs-reader
   ports:
-    - port: 4400
+    - name: http
+      port: 4400
       targetPort: http
       protocol: TCP
-      name: http
   type: ClusterIP
