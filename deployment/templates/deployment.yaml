@@ -23,6 +23,6 @@ spec:
                 name: {{ .Values.awsAccessKeySecret }}
           env:
             - name: AWS_REGION
-              value: {{ .Values.AWS_REGION }}
+              value: {{ or .Values.awsRegion .Values.AWS_REGION }}
             - name: S3_BUCKET
-              value: {{ .Values.S3_BUCKET }}
+              value: {{ or .Values.s3Bucket .Values.S3_BUCKET }}
