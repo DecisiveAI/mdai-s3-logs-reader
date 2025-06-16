@@ -28,11 +28,11 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
 ### Set up API for pulling logs from S3-compatible storage
 - Create Docker image
   ```bash
-  docker build -t mdai-s3-logs-reader:0.0.3 .
+  docker build -t mdai-s3-logs-reader:0.0.5 .
   ```
 - Load Docker image into kind cluster
   ```bash
-  kind load docker-image mdai-s3-logs-reader:0.0.3 --name mdai
+  kind load docker-image mdai-s3-logs-reader:0.0.5 --name mdai
   ```
 - Create a secret.yaml using template in [mdai-helm-chart](https://github.com/DecisiveAI/mdai-helm-chart?tab=readme-ov-file#option-a-using-mdai-collector-to-collect-component-telemetry)
 - Apply the secret.yaml to the cluster

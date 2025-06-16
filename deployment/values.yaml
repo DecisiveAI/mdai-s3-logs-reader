@@ -1,8 +1,8 @@
 namespace: mdai
 name: mdai-s3-logs-reader
-awsRegion: "us-east-1"
-s3Bucket: "mdai-collector-logs"
-awsAccessKeySecret: aws-credentials
+#awsRegion: "us-east-1"
+#s3Bucket: "mdai-collector-logs"
+#awsAccessKeySecret: "aws-credentials"
 image:
   repository: public.ecr.aws/decisiveai/mdai-s3-logs-reader
-  # tag: 0.0.3
+  # tag: 0.0.5
