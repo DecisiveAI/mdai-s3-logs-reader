@@ -1,5 +1,6 @@
 # mdai-s3-logs-reader
 ![Coverage](https://img.shields.io/badge/Coverage-0-red)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/mdai-s3-logs-reader)](https://artifacthub.io/packages/search?repo=mdai-s3-logs-reader)
 
 A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log files from S3-compatible storage. Returns most recent JSON file for a given hourly timestamp.
 
