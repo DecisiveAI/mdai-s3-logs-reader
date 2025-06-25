@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   lint-and-test:
-    name: Lint on Ubuntu
+    name: Lint & Test on Ubuntu
     runs-on: ubuntu-latest
     steps:
       - name: Clone the code
@@ -31,6 +31,26 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+          cache: false
+
+      - name: Cache Go mod and build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ steps.setup-go.outputs.go-version }}-
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: |
+          go mod download
+
+      - name: Check module tidiness
+        run: |
+          make tidy-check
 
       - name: Cache Go mod and build cache
         uses: actions/cache@v4
@@ -56,7 +76,8 @@ jobs:
           version: "latest"
 
       - name: Running Tests
-        run: CGO_ENABLED=0 go test -cover -coverprofile=coverage.txt -v -count=1 ./...
+        run: |
+          CGO_ENABLED=0 go test -cover -coverprofile=coverage.txt -v -count=1 ./...
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

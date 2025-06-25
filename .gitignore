@@ -24,3 +24,6 @@ build
 .secrets
 
 secret.yaml
+coverage.out
+coverage.html
+coverage.txt
