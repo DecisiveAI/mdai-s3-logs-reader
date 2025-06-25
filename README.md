@@ -1,5 +1,5 @@
 # mdai-s3-logs-reader
-![Coverage](https://img.shields.io/badge/Coverage-0-red)
+[![codecov](https://codecov.io/gh/DecisiveAI/mdai-s3-logs-reader/graph/badge.svg?token=U0LFMJSVNR)](https://codecov.io/gh/DecisiveAI/mdai-s3-logs-reader)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/mdai-s3-logs-reader)](https://artifacthub.io/packages/search?repo=mdai-s3-logs-reader)
 
 A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log files from S3-compatible storage. Returns most recent JSON file for a given hourly timestamp.
@@ -10,7 +10,7 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
 
 ## Prerequisites
 
-- Go 1.20+
+- Go 1.24+
 - Docker
 - [Kind](https://kind.sigs.k8s.io/)
 - Existing Cluster (Recommended: [mdai](https://docs.mydecisive.ai/))
@@ -22,9 +22,6 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
 
 ## Getting Started
 - Clone the repository
-  ```bash 
-  go mod vendor
-  ```
 
 ### Set up API for pulling logs from S3-compatible storage
 - Create Docker image
@@ -35,8 +32,8 @@ A lightweight Go API for retrieving and transforming OpenTelemetry-formatted log
   ```bash
   kind load docker-image mdai-s3-logs-reader:0.0.5 --name mdai
   ```
-- Create a secret.yaml using template in [mdai-helm-chart](https://github.com/DecisiveAI/mdai-helm-chart?tab=readme-ov-file#option-a-using-mdai-collector-to-collect-component-telemetry)
-- Apply the secret.yaml to the cluster
+- Create a `secret.yaml` using template in [mdai-labs](https://github.com/DecisiveAI/mdai-labs/blob/main/mdai/hub_monitor/mdai_monitor.yaml)
+- Apply the `secret.yaml` to the cluster
   ```bash
   kubectl apply -f secret.yaml
   ```
