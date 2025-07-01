@@ -1,10 +1,10 @@
-FROM --platform=$BUILDPLATFORM golang:1.23-bookworm AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24.4-bookworm AS builder
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /opt/mdai-s3-logs-reader
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o /mdai-s3-logs-reader main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o /mdai-s3-logs-reader ./cmd/mdai-s3-logs-reader/main.go
 
 FROM gcr.io/distroless/static-debian12
 WORKDIR /
