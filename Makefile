@@ -1,6 +1,7 @@
 DOCKER_TAG ?= 0.0.1
 CHART_VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')
 REPO_NAME := $(shell basename -s .git `git config --get remote.origin.url`)
+GO_TEST := CGO_ENABLED=0 go test -count=1
 
 docker-login docker-build docker-push: AWS_ECR_REPO := public.ecr.aws/p3k6k6h3
 docker-build docker-push: DOCKER_IMAGE := $(AWS_ECR_REPO)/$(REPO_NAME):$(DOCKER_TAG)
@@ -19,11 +20,34 @@ docker-push: tidy vendor docker-login
 
 .PHONY: build
 build: tidy vendor
-	CGO_ENABLED=0 go build -ldflags="-w -s" -o mdai-s3-logs-reader .
+	CGO_ENABLED=0 go build -ldflags="-w -s" -o mdai-s3-logs-reader cmd/mdai-s3-logs-reader/main.go
 
 .PHONY: test
 test: tidy vendor
-	CGO_ENABLED=0 go test -v -count=1 ./...
+	$(GO_TEST) ./...
+
+.PHONY: testv
+testv: tidy vendor
+	$(GO_TEST) -v ./...
+
+.PHONY: cover
+cover: tidy vendor
+	$(GO_TEST) -cover ./...
+
+.PHONY: coverv
+coverv: tidy vendor
+	$(GO_TEST) -v -cover ./...
+
+.PHONY: coverhtml
+coverhtml:
+	@trap 'rm -f coverage.out' EXIT; \
+	go test -count=1 -coverprofile=coverage.out ./... && \
+	go tool cover -html=coverage.out -o coverage.html && \
+	( open coverage.html || xdg-open coverage.html )
+
+.PHONY: clean-coverage
+clean-coverage:
+	rm -f coverage.out coverage.html
 
 .PHONY: tidy
 tidy:
