@@ -11,4 +11,3 @@ jobs:
     uses: DecisiveAI/ci/.github/workflows/helm-publish.yml@rlaw/ENG-689-docker-and-helms
     secrets:
       SLACK_NOTIFY_URL: ${{ secrets.SLACK_NOTIFY_URL }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
