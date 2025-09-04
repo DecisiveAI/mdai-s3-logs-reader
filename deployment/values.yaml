@@ -5,4 +5,4 @@ name: mdai-s3-logs-reader
 #awsAccessKeySecret: "aws-credentials"
 image:
   repository: public.ecr.aws/decisiveai/mdai-s3-logs-reader
-  # tag: 0.0.5
+  # tag: 0.0.6
