@@ -11,6 +11,10 @@ spec:
     metadata:
       labels:
         app: {{ .Values.name }}
+      {{- with .Values.deployment.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       {{- with .Values.deployment.tolerations }}
       tolerations:
