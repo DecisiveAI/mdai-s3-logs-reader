@@ -6,3 +6,8 @@ name: mdai-s3-logs-reader
 image:
   repository: public.ecr.aws/decisiveai/mdai-s3-logs-reader
   # tag: 0.0.6
+deployment:
+  tolerations: []
+  nodeSelector: {}
+  affinity: {}
+  annotations: {}
