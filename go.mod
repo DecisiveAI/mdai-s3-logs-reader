@@ -1,4 +1,4 @@
-module github.com/decisiveai/mdai-s3-logs-reader
+module github.com/mydecisive/mdai-s3-logs-reader
 
 go 1.25.0
 
