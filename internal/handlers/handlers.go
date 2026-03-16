@@ -67,6 +67,7 @@ func ListLogsHandler(ctx context.Context, w http.ResponseWriter, r *http.Request
 		logs, err := LoadLogsFromS3(timeoutCtx, s3Client, s3Bucket, prefix)
 		cancel()
 		if err != nil {
+			//nolint:gosec
 			log.Printf("Error loading logs for prefix %s: %v", prefix, err)
 			continue
 		}

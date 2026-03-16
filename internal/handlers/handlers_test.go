@@ -111,7 +111,7 @@ func TestListLogsHandler(t *testing.T) {
 				},
 			}
 
-			req := httptest.NewRequest(http.MethodGet, tt.requestURL, http.NoBody)
+			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, tt.requestURL, http.NoBody)
 			rr := httptest.NewRecorder()
 			mux := NewRouter(mockClient, bucket)
 			mux.ServeHTTP(rr, req)
